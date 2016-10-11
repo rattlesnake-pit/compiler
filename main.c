@@ -8,17 +8,113 @@
 #include <fcntl.h>
 #endif
 
-int PC = 0;
-int DS = 0;
-int st_end = 0;
-int lt_end = 0;
-int pending_end = 0;
+void EmitLn(char* s) {
+  printf("%s\n", s);
+}
+
+void EmitDeclaration(char* def, char* name) {
+  sprintf(tmp, "%s %s", def, name);
+  EmitLn(tmp);
+}
+
+void EmitArrayDeclaration(char* def, char* name, int size) {
+  sprintf(tmp, "%s %s, %d", def, name, size);
+  EmitLn(tmp);
+}
+
+void DoArrayDeclaration(enum TOKENS type) {
+  next();
+  if(TOKEN != NUMBER) error("expected array size");
+
+  int arraySize = atoi(VALUE);
+
+  next();
+  matchString("]");
+  next();
+
+  if(TOKEN != NAME) error("expected array name");
+  switch(type) {
+    case CHAR_TYPE:
+      EmitArrayDeclaration("defac", VALUE, arraySize);
+      break;
+    case INT_TYPE:
+      EmitArrayDeclaration("defai", VALUE, arraySize);
+      break;
+    case FLOAT_TYPE:
+      EmitArrayDeclaration("defaf", VALUE, arraySize);
+      break;
+    case DOUBLE_TYPE:
+      EmitArrayDeclaration("defad", VALUE, arraySize);
+      break;
+    default:
+      break;
+  }
 
 
-int readTokens() {
-	while(look != EOF) {
-		next();
-	}
+}
+void DoVariableDeclaration(enum TOKENS type) {
+  switch(type) {
+    case CHAR_TYPE:
+      EmitDeclaration("defc", VALUE);
+      break;
+    case INT_TYPE:
+      EmitDeclaration("defi", VALUE);
+      break;
+    case FLOAT_TYPE:
+      EmitDeclaration("deff", VALUE);
+      break;
+    case DOUBLE_TYPE:
+      EmitDeclaration("defd", VALUE);
+      break;
+    default:
+      break;
+  }
+}
+
+void DoDeclaration() {
+  enum TOKENS type = TOKEN;
+  next();
+  if(TOKEN == LEFT_BRACKET) {
+    DoArrayDeclaration(type);
+  }
+  else if(TOKEN == NAME) {
+    DoVariableDeclaration(type);
+  }
+  else {
+    error("unexpected Declaration");
+  }
+}
+
+void DoAssignment() {
+
+}
+void Statement() {
+  next();
+  if(isDeclaration(TOKEN)) {
+    DoDeclaration();
+  }
+  else if(isAssignment(TOKEN)) {
+    DoAssignment();
+  }
+  else {
+    error("unrecognized statement");
+  }
+}
+
+void CodeLine() {
+  do {
+    Statement();
+    next();
+  } while(TOKEN == PUNTO_COMA);
+  matchString("\n");
+}
+
+void CodeBlock() {
+  while(look != EOF) CodeLine();
+}
+
+void Language() {
+  CodeBlock();
 }
 
 int main() {
@@ -26,6 +122,6 @@ int main() {
   _setmode( _fileno(stdout), _O_BINARY);
 #endif
   init();
-  readTokens();
+  Language();
   return 0;
 }
