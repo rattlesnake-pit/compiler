@@ -1,7 +1,7 @@
 #ifndef COMPILER_H
 #define COMPILER_H
 
-#define TMP_BUFFER_SIZE 100
+#define BUFFER_SIZE 256
 
 #define NOT_FOUND -1
 
@@ -36,6 +36,8 @@ enum TOKENS {
   GREATER,
   GREATER_EQUAL,
   EQUAL,
+  LEFT_BRACE,
+  RIGHT_BRACE,
   LEFT_BRACKET,
   RIGHT_BRACKET,
   ASSIGN,
@@ -65,20 +67,22 @@ void insertSymbol(char type, int type_sz, char* name);
 int findLabelAddress(char* label);
 void insertPendingLabel();
 int isAlphaNum(char c);
-enum TOKENS token;
+int isDeclaration(enum TOKENS TOKEN);
+int isAssignment(enum TOKENS TOKEN);
+enum TOKENS TOKEN;
 char look;
-char value[TMP_BUFFER_SIZE];
-char tmp[TMP_BUFFER_SIZE];
+char VALUE[BUFFER_SIZE];
+char tmp[BUFFER_SIZE];
 char outBuffer [1000];
 
 struct symbol_row {
-  char name[100];
+  char name[BUFFER_SIZE];
   int start;
   char type;
 };
 
 struct label_row {
-  char name[100];
+  char name[BUFFER_SIZE];
   int address;
 };
 

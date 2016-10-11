@@ -26,6 +26,8 @@ char* str_tokens[] = {
   "==",
   "{",
   "}",
+  "[",
+  "]",
   "=",
   ";",
   "\n",
@@ -34,54 +36,10 @@ char* str_tokens[] = {
 
 int tokens_size = sizeof str_tokens / sizeof *str_tokens;
 
-int findVariableAddress(char *value){
-  for(int i = 0; i < st_end; i++){
-    if(strcmp(symbol_table[i].name,value) == 0){
-      return symbol_table[i].start;
-    }
-  }
-  return -1;
-}
-
-void insertPendingLabel() {
-  struct label_row row;
-  row.address = PC;
-  strcpy(row.name, value);
-  pending_label_table[pending_end] = row;
-  pending_end++;
-}
-
-void insertLabel() {
-  struct label_row row;
-  strcpy(row.name, value);
-  row.address = PC;
-  label_table[lt_end] = row;
-  lt_end++;
-}
-
-int findLabelAddress(char* label) {
-  for(int i = 0; i < lt_end; i++) {
-    if(strcmp(label_table[i].name, label) == 0) {
-      return label_table[i].address;
-    }
-  }
-  return NOT_FOUND;
-}
-
-void insertSymbol(char type, int type_sz, char* name) {
-  struct symbol_row row;
-  strcpy(row.name, name);
-  row.start = DS;
-  row.type = type;
-  symbol_table[st_end] = row;
-  st_end++;
-  DS += type_sz;
-}
-
 void scan() {
   for(int i = 0; i < tokens_size; i++) {
-    if(strcasecmp(value, str_tokens[i]) == 0) {
-      token = (enum TOKENS)i;
+    if(strcasecmp(VALUE, str_tokens[i]) == 0) {
+      TOKEN = (enum TOKENS)i;
     }
   }
 }
@@ -98,21 +56,16 @@ char upcase(char c) {
 }
 
 void matchString(char* s) {
-  if(strcmp(s, value) != 0) {
+  if(strcmp(s, VALUE) != 0) {
     expected(s);
-  }
-  else {
-      next();
   }
 }
 
 void matchString2(char* s) {
-    if(strcmp(s, value) != 0) {
-        expected(s);
-    }
-    else {
-        nextString();
-    }
+  if(strcmp(s, VALUE) != 0) {
+      expected(s);
+  }
+  nextString();
 }
 
 int isAlpha(char c) {
@@ -134,36 +87,36 @@ int isString(char c) {
 void getName() {
   int i = 0;
   while(isAlphaNum(look)) {
-    value[i] = look;
+    VALUE[i] = look;
     i++;
     getChar();
   }
-  value[i] = '\0';
-  token = NAME;
+  VALUE[i] = '\0';
+  TOKEN = NAME;
 }
 
 void getStringName() {
     int i = 0;
     while(isString(look)) {
-        value[i] =look;
+        VALUE[i] =look;
         i++;
         getChar();
     }
-    value[i] = '\0';
-    token = NAME;
+    VALUE[i] = '\0';
+    TOKEN = NAME;
 }
 
 void getNum() {
     int i = 0;
     int hasPoint = 0;
     if(look == '-') {
-      value[0] = '-';
+      VALUE[0] = '-';
       i++;
       getChar();
     }
     if(look == '.') {
-      value[i] = '0';
-      value[i+1] = '.';
+      VALUE[i] = '0';
+      VALUE[i+1] = '.';
       hasPoint = 1;
       i += 2;
       getChar();
@@ -175,21 +128,20 @@ void getNum() {
           }
           hasPoint = 1;
         }
-        value[i] = look;
+        VALUE[i] = look;
         i++;
         getChar();
     }
-    if(value[i-1] == '.') {
+    if(VALUE[i-1] == '.') {
       error("A number cannot end in a decimal point");
     }
-    value[i] = '\0';
-    token = hasPoint? DECIMAL: NUMBER;
+    VALUE[i] = '\0';
+    TOKEN = hasPoint? DECIMAL: NUMBER;
 }
 
 void handleWhite() {
   while(look == ' ' || look == '\r' || look == '\t') { 
 	  getChar();
-	  printf("doing whitespace\n");
   }
 }
 void next() {
@@ -200,21 +152,15 @@ void next() {
   }
   else if(isNum(look) || look == '-' || look == '.') {
     getNum();
-    printf("getting number %s \n", value);
   }
   else {
-    value[0] = look;
-    value[1] = '\0';
+    VALUE[0] = look;
+    VALUE[1] = '\0';
     getChar();
-    token = SYMBOL;
+    TOKEN = SYMBOL;
   }
   scan();
-  if(token == NAME) {
-	  printf("got name: %s\n", value);
-  }
-  else if(token != NUMBER) {
-	  printf("got token: %s with id: %d\n", value, token);
-  }
+
 }
 
 void nextString() {
@@ -224,7 +170,6 @@ void nextString() {
 
 void init() {
   getChar();
-  next();
 }
 
 void println(char* s) {
