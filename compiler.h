@@ -59,6 +59,7 @@ void nextString();
 void init();
 void scan();
 void matchString();
+int isSpecificString(char *s);
 void matchString2();
 void error(char *s);
 void expected(char* s);

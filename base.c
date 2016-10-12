@@ -61,6 +61,9 @@ void matchString(char* s) {
   }
 }
 
+int isSpecificString(char *s){
+  return strcmp(s,VALUE);
+}
 void matchString2(char* s) {
   if(strcmp(s, VALUE) != 0) {
       expected(s);
@@ -140,7 +143,7 @@ void getNum() {
 }
 
 void handleWhite() {
-  while(look == ' ' || look == '\r' || look == '\t') { 
+  while(look == ' ' || look == '\r' || look == '\t') {
 	  getChar();
   }
 }
@@ -148,7 +151,7 @@ void next() {
   handleWhite();
   if(isAlpha(look)) {
     getName();
-    
+
   }
   else if(isNum(look) || look == '-' || look == '.') {
     getNum();
