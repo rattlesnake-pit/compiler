@@ -8,5 +8,5 @@ int isDeclaration(enum TOKENS TOKEN) {
 }
 
 int isAssignment(enum TOKENS TOKEN) {
-  return 0;
+  return TOKEN == NAME;
 }

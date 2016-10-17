@@ -154,7 +154,7 @@ void next() {
     getName();
 
   }
-  else if(isNum(look) || look == '-' || look == '.') {
+  else if(isNum(look) || look == '.') {
     getNum();
   }
   else {

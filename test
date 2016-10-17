@@ -1,6 +1,4 @@
 {
-int [10] a; char b ;double c 
-float d; float wtf
-float [100] ef
-char[12]lld double [0] ok
+float i
+i = 10.5 + (5.5 - 2) * 10 / 2
 }

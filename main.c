@@ -8,6 +8,8 @@
 #include <fcntl.h>
 #endif
 
+void Expression();
+
 void EmitLn(char* s) {
   printf("%s\n", s);
 }
@@ -82,10 +84,97 @@ void DoDeclaration() {
   else {
     error("unexpected Declaration");
   }
+  next();
+}
+
+void LoadVar() {
+}
+
+void LoadConst(char* VALUE) {
+  if(TOKEN == NUMBER)
+    sprintf(tmp, "pushki %s", VALUE);
+  else if(TOKEN == DECIMAL)
+    sprintf(tmp, "pushkf %s", VALUE);
+  EmitLn(tmp);
+}
+
+void Factor() {
+  if(TOKEN == LEFT_PAREN) {
+    next();
+    Expression();
+    matchString(")");
+  }
+  else {
+    if(TOKEN == NAME) {
+      LoadVar(VALUE);
+    } else if(TOKEN == NUMBER || TOKEN == DECIMAL) {
+      LoadConst(VALUE);
+    }
+    else {
+      expected("Math Factor");
+    }
+  }
+  next();
+}
+
+void Multiply() {
+  next();
+  Factor();
+  EmitLn("mul");
+}
+
+void Divide() {
+  next();
+  Factor();
+  EmitLn("div");
+}
+
+void MulExpression() {
+  Factor();
+  while(TOKEN == MUL || TOKEN == DIV) {
+    switch(TOKEN) {
+      case MUL: Multiply(); break;
+      case DIV: Divide(); break;
+    }
+  }
+}
+
+void Add() {
+  next();
+  MulExpression();
+  EmitLn("add");
+}
+
+void Substract() {
+  next();
+  MulExpression();
+  EmitLn("sub");
+}
+
+void Expression() {
+  MulExpression();
+  while(TOKEN == ADD || TOKEN == SUB) {
+    switch(TOKEN) {
+      case ADD : Add(); break;
+      case SUB : Substract(); break;
+    }
+  }
+}
+
+void Store(char* name) {
+  sprintf(tmp, "popi %s", name);
+  EmitLn(tmp);
 }
 
 void DoAssignment() {
-
+  char name[BUFFER_SIZE];
+  strcpy(name, VALUE);
+  next();
+  matchString("=");
+  next();
+  Expression();
+  Store(name);
+  
 }
 void Statement() {
   if(isDeclaration(TOKEN)) {
@@ -97,7 +186,6 @@ void Statement() {
   else {
     error("unrecognized statement");
   }
-  next();
 }
 
 void CodeLine() {
