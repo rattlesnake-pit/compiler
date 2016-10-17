@@ -49,9 +49,8 @@ void DoArrayDeclaration(enum TOKENS type) {
     default:
       break;
   }
-
-
 }
+
 void DoVariableDeclaration(enum TOKENS type) {
   switch(type) {
     case CHAR_TYPE:
@@ -89,7 +88,6 @@ void DoAssignment() {
 
 }
 void Statement() {
-  next();
   if(isDeclaration(TOKEN)) {
     DoDeclaration();
   }
@@ -99,18 +97,31 @@ void Statement() {
   else {
     error("unrecognized statement");
   }
+  next();
 }
 
 void CodeLine() {
-  do {
-    Statement();
+  if(TOKEN == ENDLINE) {
     next();
-  } while(TOKEN == SEMI_COLON);
-  matchString("\n");
+  }
+  else {
+    Statement();
+  while(TOKEN == SEMI_COLON) {
+    next();
+    Statement();
+  }
+   matchString("\n");
+  }
 }
 
 void CodeBlock() {
-  while(look != EOF) CodeLine();
+  next();
+  matchString("{");
+  next();
+  while(TOKEN != RIGHT_BRACE){
+    CodeLine();
+  }
+  matchString("}");
 }
 
 void Language() {

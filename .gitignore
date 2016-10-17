@@ -1,3 +1,5 @@
 a.out
 compiler
 *.swp
+.ycm_extra_conf.*
+tags
