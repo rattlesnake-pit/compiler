@@ -62,8 +62,9 @@ void matchString(char* s) {
 }
 
 int isSpecificString(char *s){
-  return strcmp(s,VALUE);
+  return strcmp(s,VALUE) == 0;
 }
+
 void matchString2(char* s) {
   if(strcmp(s, VALUE) != 0) {
       expected(s);
@@ -185,6 +186,7 @@ void error(char* s) {
 }
 
 void expected(char* s) {
+  if(*s == '\n') s = "endline";
   sprintf(tmp, "EXPECTED '%s'" , s);
   error(tmp);
 }

@@ -97,15 +97,21 @@ void Statement() {
   else {
     error("unrecognized statement");
   }
+  next();
 }
 
 void CodeLine() {
-  do {
-    Statement();
+  if(TOKEN == ENDLINE) {
     next();
-  } while(TOKEN == SEMI_COLON);
-  matchString("\n");
-  next();
+  }
+  else {
+    Statement();
+  while(TOKEN == SEMI_COLON) {
+    next();
+    Statement();
+  }
+   matchString("\n");
+  }
 }
 
 void CodeBlock() {
@@ -113,14 +119,9 @@ void CodeBlock() {
   matchString("{");
   next();
   while(TOKEN != RIGHT_BRACE){
-    if(isSpecificString("\n")){
-      CodeLine();
-    }
-    else{
-      matchString("\n");
-      next();
-    }
+    CodeLine();
   }
+  matchString("}");
 }
 
 void Language() {

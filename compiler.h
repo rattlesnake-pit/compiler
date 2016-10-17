@@ -17,36 +17,36 @@
 #define DOUBLE_SZ 8
 
 enum TOKENS {
-  CHAR_TYPE,
-  INT_TYPE,
-  FLOAT_TYPE,
-  DOUBLE_TYPE,
-  IF,
-  ELSE,
-  FOR,
-  WHILE,
-  LEFT_PAREN,
-  RIGHT_PAREN,
-  ADD,
-  SUB,
-  MUL,
-  DIV,
-  LESS,
-  LESS_EQUAL,
-  GREATER,
-  GREATER_EQUAL,
-  EQUAL,
-  LEFT_BRACE,
-  RIGHT_BRACE,
-  LEFT_BRACKET,
-  RIGHT_BRACKET,
-  ASSIGN,
-  SEMI_COLON,
-  ENDLINE,
-  NAME,
-  SYMBOL,
-  NUMBER,
-  DECIMAL
+  CHAR_TYPE,    // 0
+  INT_TYPE,     // 1
+  FLOAT_TYPE,   // 2
+  DOUBLE_TYPE,  // 3
+  IF,           // 4
+  ELSE,         // 5
+  FOR,          // 6
+  WHILE,        // 7
+  LEFT_PAREN,   // 8
+  RIGHT_PAREN,  // 9
+  ADD,          // 10
+  SUB,          // 11
+  MUL,          // 12
+  DIV,          // 13
+  LESS,         // 14
+  LESS_EQUAL,   // 15
+  GREATER,      // 16
+  GREATER_EQUAL,// 17
+  EQUAL,        // 18
+  LEFT_BRACE,   // 19
+  RIGHT_BRACE,  // 20
+  LEFT_BRACKET, // 21
+  RIGHT_BRACKET,// 22
+  ASSIGN,       // 23
+  SEMI_COLON,   // 24
+  ENDLINE,      // 25
+  NAME,         // 26
+  SYMBOL,       // 27
+  NUMBER,       // 28
+  DECIMAL       // 29
 };
 
 extern char* str_tokens[];
