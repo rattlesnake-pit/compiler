@@ -105,7 +105,7 @@ void CodeLine() {
   do {
     Statement();
     next();
-  } while(TOKEN == PUNTO_COMA);
+  } while(TOKEN == SEMI_COLON);
   matchString("\n");
 }
 
