@@ -76,11 +76,6 @@ char VALUE[BUFFER_SIZE];
 char tmp[BUFFER_SIZE];
 char outBuffer [1000];
 
-struct symbol_row {
-  char name[BUFFER_SIZE];
-  int start;
-  char type;
-};
 
 struct label_row {
   char name[BUFFER_SIZE];
@@ -89,7 +84,6 @@ struct label_row {
 
 extern int DS; // symbol_def
 extern int PC;
-struct symbol_row symbol_table[100];
 struct label_row label_table[100];
 struct label_row pending_label_table[100];
 extern int st_end;

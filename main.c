@@ -1,4 +1,5 @@
 #include "compiler.h"
+#include "code_gen.h"
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
@@ -38,6 +39,7 @@ void DoArrayDeclaration(enum TOKENS type) {
   switch(type) {
     case CHAR_TYPE:
       EmitArrayDeclaration("defac", VALUE, arraySize);
+      insertSymbol(CHAR, CHAR_SZ * arraySize, VALUE);
       break;
     case INT_TYPE:
       EmitArrayDeclaration("defai", VALUE, arraySize);
@@ -57,15 +59,19 @@ void DoVariableDeclaration(enum TOKENS type) {
   switch(type) {
     case CHAR_TYPE:
       EmitDeclaration("defc", VALUE);
+      insertSymbol(CHAR, CHAR_SZ, VALUE);
       break;
     case INT_TYPE:
       EmitDeclaration("defi", VALUE);
+      insertSymbol(INT, INT_SZ, VALUE);
       break;
     case FLOAT_TYPE:
       EmitDeclaration("deff", VALUE);
+      insertSymbol(FLOAT, FLOAT_SZ, VALUE);
       break;
     case DOUBLE_TYPE:
       EmitDeclaration("defd", VALUE);
+      insertSymbol(DOUBLE, DOUBLE_SZ, VALUE);
       break;
     default:
       break;
@@ -162,7 +168,21 @@ void Expression() {
 }
 
 void Store(char* name) {
-  sprintf(tmp, "popi %s", name);
+  struct symbol_row * variable = findVariable(name);
+  if(variable == NULL) error("variable not found");
+
+  if(variable->type == CHAR)
+    sprintf(tmp, "popc %s", name);
+
+  if(variable->type == INT)
+    sprintf(tmp, "popi %s", name);
+
+  if(variable->type == FLOAT)
+    sprintf(tmp, "popf %s", name);
+
+  if(variable->type == DOUBLE)
+    sprintf(tmp, "popd %s", name);
+
   EmitLn(tmp);
 }
 
