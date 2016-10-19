@@ -93,7 +93,24 @@ void DoDeclaration() {
   next();
 }
 
-void LoadVar() {
+void LoadVar(char * Name) {
+  struct symbol_row * variable = findVariable(Name);
+  if(variable == NULL) error("Undefined variable");
+  switch(variable->type) {
+  case CHAR:
+    sprintf(tmp, "pushc %s", variable->name);
+    break;
+  case INT:
+    sprintf(tmp, "pushi %s", variable->name);
+    break;
+  case FLOAT:
+    sprintf(tmp, "pushf %s", variable->name);
+    break;
+  case DOUBLE:
+    sprintf(tmp, "pushd %s", variable->name);
+    break;
+  }
+  EmitLn(tmp);
 }
 
 void LoadConst(char* VALUE) {
@@ -194,8 +211,8 @@ void DoAssignment() {
   next();
   Expression();
   Store(name);
-  
 }
+
 void Statement() {
   if(isDeclaration(TOKEN)) {
     DoDeclaration();
