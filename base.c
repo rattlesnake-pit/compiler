@@ -13,6 +13,7 @@ char* str_tokens[] = {
   "else",
   "for",
   "while",
+  "print",
   "(",
   ")",
   "+",
@@ -31,7 +32,7 @@ char* str_tokens[] = {
   "=",
   ";",
   "\n",
-
+  ",",
 };
 
 int tokens_size = sizeof str_tokens / sizeof *str_tokens;
