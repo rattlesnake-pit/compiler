@@ -1,5 +1,5 @@
 {
-double i; i = 10.5 + (5.5 - 2) * 10 / 2
-int x; x = 10 * 2
-float f ;f = 100.5 /2 * 23.2
+float i; float f
+i = 10.5 + (5.5 - 2) * 10 / 2
+f = i * i
 }
