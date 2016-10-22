@@ -25,28 +25,30 @@ enum TOKENS {
   ELSE,         // 5
   FOR,          // 6
   WHILE,        // 7
-  LEFT_PAREN,   // 8
-  RIGHT_PAREN,  // 9
-  ADD,          // 10
-  SUB,          // 11
-  MUL,          // 12
-  DIV,          // 13
-  LESS,         // 14
-  LESS_EQUAL,   // 15
-  GREATER,      // 16
-  GREATER_EQUAL,// 17
-  EQUAL,        // 18
-  LEFT_BRACE,   // 19
-  RIGHT_BRACE,  // 20
-  LEFT_BRACKET, // 21
-  RIGHT_BRACKET,// 22
-  ASSIGN,       // 23
-  SEMI_COLON,   // 24
-  ENDLINE,      // 25
-  NAME,         // 26
-  SYMBOL,       // 27
-  NUMBER,       // 28
-  DECIMAL       // 29
+  PRINT,        // 8
+  LEFT_PAREN,   // 9
+  RIGHT_PAREN,  // 10
+  ADD,          // 11
+  SUB,          // 12
+  MUL,          // 13
+  DIV,          // 14
+  LESS,         // 15
+  LESS_EQUAL,   // 16
+  GREATER,      // 17
+  GREATER_EQUAL,// 18
+  EQUAL,        // 19
+  LEFT_BRACE,   // 20
+  RIGHT_BRACE,  // 21
+  LEFT_BRACKET, // 22
+  RIGHT_BRACKET,// 23
+  ASSIGN,       // 24
+  SEMI_COLON,   // 25
+  ENDLINE,      // 26
+  COMMA,        // 27
+  NAME,         // 28
+  SYMBOL,       // 29
+  NUMBER,       // 30
+  DECIMAL       // 31
 };
 
 extern char* str_tokens[];

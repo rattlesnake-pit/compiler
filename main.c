@@ -213,12 +213,57 @@ void DoAssignment() {
   Store(name);
 }
 
+void PrintVariable(char* Name) {
+  struct symbol_row * variable = findVariable(Name);
+  if(variable == NULL) error("Undefined variable");
+
+  switch(variable->type) {
+  case CHAR:
+    sprintf(tmp, "prtc %s", variable->name);
+    break;
+  case INT:
+    sprintf(tmp, "prti %s", variable->name);
+    break;
+  case FLOAT:
+    sprintf(tmp, "prtf %s", variable->name);
+    break;
+  case DOUBLE:
+    sprintf(tmp, "prtd %s", variable->name);
+    break;
+  }
+  EmitLn(tmp);
+  EmitLn("prtcr");
+
+}
+
+void DoPrint() {
+  next();
+  if(TOKEN != LEFT_PAREN) expected("opening paretheses");
+  next();
+  if(TOKEN != NAME) expected("variable to print");
+  PrintVariable(VALUE);
+  next();
+
+  while(TOKEN == COMMA) {
+    next();
+    if(TOKEN != NAME) expected("variable to print");
+    PrintVariable(VALUE);
+    next();
+  }
+  if(TOKEN != RIGHT_PAREN) expected("closing paretheses");
+  next();
+
+}
+
 void Statement() {
   if(isDeclaration(TOKEN)) {
     DoDeclaration();
   }
   else if(isAssignment(TOKEN)) {
     DoAssignment();
+  }
+  else if(TOKEN == PRINT) {
+    DoPrint();
   }
   else {
     error("unrecognized statement");

@@ -2,4 +2,5 @@
 float i; float f
 i = 10.5 + (5.5 - 2) * 10 / 2
 f = i * i
+print(i, f)
 }
