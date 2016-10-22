@@ -145,7 +145,7 @@ void getNum() {
 }
 
 void handleWhite() {
-  while(look == ' ' || look == '\r' || look == '\t') {
+  while(look == '\n' || look == ' ' || look == '\r' || look == '\t') {
 	  getChar();
   }
 }

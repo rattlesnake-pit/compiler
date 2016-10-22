@@ -10,6 +10,7 @@
 #endif
 
 void Expression();
+void CodeBlock();
 
 void EmitLn(char* s) {
   printf("%s\n", s);
@@ -255,12 +256,41 @@ void DoPrint() {
 
 }
 
+void EmitEq(char * label) {
+  sprintf(tmp, "jmpeq %s", label);
+  EmitLn(tmp);
+}
+
+void EmitLabel(char *label) {
+  sprintf(tmp, "%s:", label);
+  EmitLn(tmp);
+}
+
+void DoIf() {
+  next();
+  if(TOKEN != LEFT_PAREN) expected("opening paretheses");
+  next();
+  Expression();
+  EmitLn("pushki 0");
+  EmitLn("cmp");
+  if(TOKEN != RIGHT_PAREN) expected("closing paretheses");
+  next();
+  char l1[BUFFER_SIZE];
+  genLabel(l1);
+  EmitEq(l1);
+  CodeBlock();
+  EmitLabel(l1);
+}
+
 void Statement() {
   if(isDeclaration(TOKEN)) {
     DoDeclaration();
   }
   else if(isAssignment(TOKEN)) {
     DoAssignment();
+  }
+  else if(TOKEN == IF) {
+    DoIf();
   }
   else if(TOKEN == PRINT) {
     DoPrint();
@@ -271,30 +301,25 @@ void Statement() {
 }
 
 void CodeLine() {
-  if(TOKEN == ENDLINE) {
-    next();
-  }
-  else {
-    Statement();
+  Statement();
   while(TOKEN == SEMI_COLON) {
     next();
     Statement();
   }
-   matchString("\n");
-  }
 }
 
 void CodeBlock() {
+  if(TOKEN != LEFT_BRACE) expected("{");
   next();
-  matchString("{");
-  next();
-  while(TOKEN != RIGHT_BRACE){
+  while(TOKEN != RIGHT_BRACE) {
     CodeLine();
   }
-  matchString("}");
+  if(TOKEN != RIGHT_BRACE) expected("}");
+  next();
 }
 
 void Language() {
+  next();
   CodeBlock();
 }
 
