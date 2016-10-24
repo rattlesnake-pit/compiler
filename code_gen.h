@@ -8,4 +8,5 @@ struct symbol_row {
 
 void insertSymbol(char type, int type_sz, char* name);
 struct symbol_row * findVariable(char *value);
+void genLabel(char *label);
 #endif
