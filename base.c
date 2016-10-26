@@ -14,6 +14,7 @@ char* str_tokens[] = {
   "for",
   "while",
   "print",
+  "read",
   "(",
   ")",
   "+",
