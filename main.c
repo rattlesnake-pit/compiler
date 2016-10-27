@@ -26,6 +26,7 @@ void EmitArrayDeclaration(char* def, char* name, int size) {
   EmitLn(tmp);
 }
 
+
 void DoArrayDeclaration(enum TOKENS type) {
   next();
   if(TOKEN != NUMBER) error("expected array size");
@@ -256,6 +257,50 @@ void DoPrint() {
 
 }
 
+void ReadVariable(char* Name) {
+  struct symbol_row * variable = findVariable(Name);
+  if(variable == NULL) error("Undefined variable");
+
+  switch(variable->type) {
+  case CHAR:
+    sprintf(tmp, "rdc %s", variable->name);
+    break;
+  case INT:
+    sprintf(tmp, "rdi %s", variable->name);
+    break;
+  case FLOAT:
+    sprintf(tmp, "rdf %s", variable->name);
+    break;
+  case DOUBLE:
+    sprintf(tmp, "rdd %s", variable->name);
+    break;
+  case STRING:
+    sprintf(tmp, "rds %s", variable->name);
+  }
+  EmitLn(tmp);
+  EmitLn("prtcr");
+
+}
+
+void DoRead() {
+  next();
+  if(TOKEN != LEFT_PAREN) expected("opening paretheses");
+  next();
+  if(TOKEN != NAME) expected("variable to read");
+  ReadVariable(VALUE);
+  next();
+
+  while(TOKEN == COMMA) {
+    next();
+    if(TOKEN != NAME) expected("variable to read");
+    ReadVariable(VALUE);
+    next();
+  }
+  if(TOKEN != RIGHT_PAREN) expected("closing paretheses");
+  next();
+
+}
+
 void EmitEq(char * label) {
   sprintf(tmp, "jmpeq %s", label);
   EmitLn(tmp);
@@ -294,6 +339,9 @@ void Statement() {
   }
   else if(TOKEN == PRINT) {
     DoPrint();
+  }
+  else if(TOKEN == READ){
+    DoRead();
   }
   else {
     error("unrecognized statement");
