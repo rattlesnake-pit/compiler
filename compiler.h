@@ -38,23 +38,28 @@ enum TOKENS {
   GREATER,      // 18
   GREATER_EQUAL,// 19
   EQUAL,        // 20
-  LEFT_BRACE,   // 21
-  RIGHT_BRACE,  // 22
-  LEFT_BRACKET, // 23
-  RIGHT_BRACKET,// 24
-  ASSIGN,       // 25
-  SEMI_COLON,   // 26
-  ENDLINE,      // 27
-  COMMA,        // 28
-  NAME,         // 29
-  SYMBOL,       // 30
-  NUMBER,       // 31
-  DECIMAL       // 32
+  NOT_EQUAL,    // 21
+  LEFT_BRACE,   // 22
+  RIGHT_BRACE,  // 23
+  LEFT_BRACKET, // 24
+  RIGHT_BRACKET,// 25
+  ASSIGN,       // 26
+  SEMI_COLON,   // 27
+  ENDLINE,      // 28
+  COMMA,        // 29
+  AND,          // 30
+  OR,           // 31
+  NOT,          // 32
+  NAME,         // 33
+  SYMBOL,       // 34
+  NUMBER,       // 35
+  DECIMAL       // 36
 };
 
 extern char* str_tokens[];
 extern int tokens_size;
 
+void EmitLn(char * str);
 void getChar();
 int findAddress();
 void next();
@@ -73,6 +78,7 @@ void insertPendingLabel();
 int isAlphaNum(char c);
 int isDeclaration(enum TOKENS TOKEN);
 int isAssignment(enum TOKENS TOKEN);
+int isRelop(enum TOKENS TOKEN);
 enum TOKENS TOKEN;
 char look;
 char VALUE[BUFFER_SIZE];

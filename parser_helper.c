@@ -10,3 +10,7 @@ int isDeclaration(enum TOKENS TOKEN) {
 int isAssignment(enum TOKENS TOKEN) {
   return TOKEN == NAME;
 }
+
+int isRelop(enum TOKENS TOKEN) {
+  return TOKEN >= LESS && TOKEN <= NOT_EQUAL;
+}

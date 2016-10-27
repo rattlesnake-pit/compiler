@@ -1,6 +1,7 @@
 #include "string.h"
 #include "code_gen.h"
 #include "stdio.h"
+#include "compiler.h"
 
 int DS = 0;
 int ST_END = 0;
@@ -30,4 +31,9 @@ struct symbol_row * findVariable(char *value){
 
 void genLabel(char *label) {
   sprintf(label, "L%d", LabelNumber++);
+}
+
+void EmitLabel(char *label) {
+  sprintf(tmp, "%s:", label);
+  EmitLn(tmp);
 }

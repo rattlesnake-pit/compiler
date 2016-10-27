@@ -26,6 +26,7 @@ char* str_tokens[] = {
   ">",
   ">=",
   "==",
+  "!=",
   "{",
   "}",
   "[",
@@ -34,6 +35,9 @@ char* str_tokens[] = {
   ";",
   "\n",
   ",",
+  "&&",
+  "||",
+  "!",
 };
 
 int tokens_size = sizeof str_tokens / sizeof *str_tokens;
@@ -161,8 +165,24 @@ void next() {
   }
   else {
     VALUE[0] = look;
-    VALUE[1] = '\0';
+    char prev = look;
     getChar();
+    if((prev == '<' || prev == '>' || prev == '=' || prev == '!') && look == '=') {
+      VALUE[1] = '=';
+      VALUE[2] = '\0';
+      getChar();
+    }
+    else if(prev == '&' && look == '&') {
+      VALUE[1] = '&';
+      VALUE[2] = '\0';
+      getChar();
+    }
+    else if(prev == '|' && look == '|') {
+      VALUE[1] = '|';
+      VALUE[2] = '\0';
+      getChar();
+    }
+    else VALUE[1] = '\0';
     TOKEN = SYMBOL;
   }
   scan();
