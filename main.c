@@ -11,6 +11,8 @@
 
 void Expression();
 void CodeBlock();
+void Relation();
+void BoolExpression();
 
 void EmitLn(char* s) {
   printf("%s\n", s);
@@ -161,8 +163,8 @@ void LoadConst(char* VALUE) {
 void Factor() {
   if(TOKEN == LEFT_PAREN) {
     next();
-    Expression();
-    matchString(")");
+    BoolExpression();
+    if(TOKEN != RIGHT_PAREN) expected("closing exp paren");
     next();
   }
   else {
@@ -223,6 +225,123 @@ void Expression() {
   }
 }
 
+void EmitComparison(char* jumpType) {
+  char l1[BUFFER_SIZE];
+  char l2[BUFFER_SIZE];
+  genLabel(l1);
+  genLabel(l2);
+  sprintf(tmp, "%s %s", jumpType, l1);
+  EmitLn(tmp);
+  EmitLn("pushki 0");
+  sprintf(tmp, "jmp %s", l2);
+  EmitLn(tmp);
+  EmitLabel(l1);
+  EmitLn("pushki 1");
+  EmitLabel(l2);
+}
+
+void Compare() {
+  next();
+  Expression();
+  EmitLn("cmp");
+}
+
+void Equals() {
+  Compare();
+  EmitComparison("jmpeq");
+}
+
+void NotEqual() {
+  Compare();
+  EmitComparison("jmpne");
+}
+
+void Less() {
+  Compare();
+  EmitComparison("jmplt");
+}
+
+void LessEqual() {
+  Compare();
+  EmitComparison("jmple");
+}
+
+void Greater() {
+  Compare();
+  EmitComparison("jmpgt");
+}
+
+void GreaterEqual() {
+  Compare();
+  EmitComparison("jmpge");
+}
+
+void Relation() {
+  Expression();
+  if(isRelop(TOKEN)) {
+    switch(TOKEN) {
+      case EQUAL: Equals(); break;
+      case LESS: Less(); break;
+      case LESS_EQUAL: LessEqual(); break;
+      case GREATER: Greater(); break;
+      case GREATER_EQUAL: GreaterEqual(); break;
+      case NOT_EQUAL: NotEqual(); break;
+    }
+  }
+}
+
+void NotIt() {
+  char l1[BUFFER_SIZE];
+  char l2[BUFFER_SIZE];
+  genLabel(l1);
+  genLabel(l2);
+  EmitLn("pushki 0");
+  EmitLn("cmp");
+  sprintf(tmp, "jmpeq %s", l1);
+  EmitLn(tmp);
+  EmitLn("pushki 0");
+  sprintf(tmp, "jmp %s", l2);
+  EmitLn(tmp);
+  EmitLabel(l1);
+  EmitLn("pushki 1");
+  EmitLabel(l2);
+}
+
+void NotFactor() {
+  if(TOKEN == NOT) {
+    next();
+    Relation();
+    NotIt();
+  }
+  else Relation();
+}
+
+void DoAnd() {
+  EmitLn("mul");
+}
+
+void BoolTerm() {
+  NotFactor();
+  while(TOKEN == AND) {
+    next();
+    NotFactor();
+    DoAnd();
+  }
+}
+
+void DoOr() {
+  EmitLn("add");
+}
+
+void BoolExpression() {
+  BoolTerm();
+  while(TOKEN == OR) {
+    next();
+    BoolTerm();
+    DoOr();
+  }
+}
+
 void StoreVar(char* name) {
   struct symbol_row * variable = findVariable(name);
   if(variable == NULL) error("variable not found");
@@ -275,7 +394,7 @@ void DoAssignment() {
   }
   matchString("=");
   next();
-  Expression();
+  BoolExpression();
   if(isArray) {
     EmitLn("movy");
     StoreArray(name);
@@ -428,16 +547,11 @@ void DoRead() {
 
 }
 
-void EmitLabel(char *label) {
-  sprintf(tmp, "%s:", label);
-  EmitLn(tmp);
-}
-
 void DoIf() {
   next();
   if(TOKEN != LEFT_PAREN) expected("opening paretheses");
   next();
-  Expression();
+  BoolExpression();
   EmitLn("pushki 0");
   EmitLn("cmp");
   if(TOKEN != RIGHT_PAREN) expected("closing paretheses");
