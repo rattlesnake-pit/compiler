@@ -1,10 +1,6 @@
 {
-
-  int a
-  read (a)
-  if(a){
-  	print(a)
-
-  }
-
+  int[10] a; int i; i = 0
+  read(a[i])
+  a[i+1] = a[i] + 3
+  print(a[i], a[i+1])
 }

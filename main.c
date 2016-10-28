@@ -45,12 +45,15 @@ void DoArrayDeclaration(enum TOKENS type) {
       break;
     case INT_TYPE:
       EmitArrayDeclaration("defai", VALUE, arraySize);
+      insertSymbol(INT, INT_SZ * arraySize, VALUE);
       break;
     case FLOAT_TYPE:
       EmitArrayDeclaration("defaf", VALUE, arraySize);
+      insertSymbol(FLOAT, FLOAT_SZ * arraySize, VALUE);
       break;
     case DOUBLE_TYPE:
       EmitArrayDeclaration("defad", VALUE, arraySize);
+      insertSymbol(DOUBLE, DOUBLE_SZ * arraySize, VALUE);
       break;
     default:
       break;
@@ -95,24 +98,56 @@ void DoDeclaration() {
   next();
 }
 
-void LoadVar(char * Name) {
-  struct symbol_row * variable = findVariable(Name);
-  if(variable == NULL) error("Undefined variable");
-  switch(variable->type) {
+void LoadVar(char type, char* name) {
+  switch(type) {
   case CHAR:
-    sprintf(tmp, "pushc %s", variable->name);
+    sprintf(tmp, "pushc %s", name);
     break;
   case INT:
-    sprintf(tmp, "pushi %s", variable->name);
+    sprintf(tmp, "pushi %s", name);
     break;
   case FLOAT:
-    sprintf(tmp, "pushf %s", variable->name);
+    sprintf(tmp, "pushf %s", name);
     break;
   case DOUBLE:
-    sprintf(tmp, "pushd %s", variable->name);
+    sprintf(tmp, "pushd %s", name);
     break;
   }
   EmitLn(tmp);
+}
+void LoadArray(char type, char* name) {
+  switch(type) {
+  case CHAR:
+    sprintf(tmp, "pushac %s", name);
+    break;
+  case INT:
+    sprintf(tmp, "pushai %s", name);
+    break;
+  case FLOAT:
+    sprintf(tmp, "pushaf %s", name);
+    break;
+  case DOUBLE:
+    sprintf(tmp, "pushad %s", name);
+    break;
+  }
+  EmitLn(tmp);
+
+}
+void Load(char *Name) {
+  struct symbol_row * variable = findVariable(Name);
+  if(variable == NULL) error("Undefined variable");
+  next();
+  int isArray = 0;
+  if(TOKEN == LEFT_BRACKET) {
+    isArray = 1;
+    next();
+    Expression();
+    EmitLn("popx");
+    if(TOKEN != RIGHT_BRACKET) expected("closing array bracket");
+    next();
+  }
+  if(isArray)LoadArray(variable->type, variable->name);
+  else LoadVar(variable->type, variable->name);
 }
 
 void LoadConst(char* VALUE) {
@@ -128,18 +163,20 @@ void Factor() {
     next();
     Expression();
     matchString(")");
+    next();
   }
   else {
     if(TOKEN == NAME) {
-      LoadVar(VALUE);
+      Load(VALUE);
     } else if(TOKEN == NUMBER || TOKEN == DECIMAL) {
       LoadConst(VALUE);
+      next();
     }
     else {
       expected("Math Factor");
+      next();
     }
   }
-  next();
 }
 
 void Multiply() {
@@ -186,7 +223,7 @@ void Expression() {
   }
 }
 
-void Store(char* name) {
+void StoreVar(char* name) {
   struct symbol_row * variable = findVariable(name);
   if(variable == NULL) error("variable not found");
 
@@ -205,37 +242,99 @@ void Store(char* name) {
   EmitLn(tmp);
 }
 
+void StoreArray(char* name) {
+  struct symbol_row * variable = findVariable(name);
+  if(variable == NULL) error("variable not found");
+  if(variable->type == CHAR)
+    sprintf(tmp, "popac %s", name);
+
+  if(variable->type == INT)
+    sprintf(tmp, "popai %s", name);
+
+  if(variable->type == FLOAT)
+    sprintf(tmp, "popaf %s", name);
+
+  if(variable->type == DOUBLE)
+    sprintf(tmp, "popad %s", name);
+
+  EmitLn(tmp);
+}
+
 void DoAssignment() {
   char name[BUFFER_SIZE];
   strcpy(name, VALUE);
   next();
+  int isArray = 0;
+  if(TOKEN == LEFT_BRACKET) {
+    isArray = 1;
+    next();
+    Expression();
+    EmitLn("popy");
+    if(TOKEN != RIGHT_BRACKET) expected("closing array");
+    next();
+  }
   matchString("=");
   next();
   Expression();
-  Store(name);
+  if(isArray) {
+    EmitLn("movy");
+    StoreArray(name);
+  }
+  else StoreVar(name);
 }
 
-void PrintVariable(char* Name) {
-  struct symbol_row * variable = findVariable(Name);
-  if(variable == NULL) error("Undefined variable");
-
-  switch(variable->type) {
+void PrintVar(char type, char *name) {
+  switch(type) {
   case CHAR:
-    sprintf(tmp, "prtc %s", variable->name);
+    sprintf(tmp, "prtc %s", name);
     break;
   case INT:
-    sprintf(tmp, "prti %s", variable->name);
+    sprintf(tmp, "prti %s", name);
     break;
   case FLOAT:
-    sprintf(tmp, "prtf %s", variable->name);
+    sprintf(tmp, "prtf %s", name);
     break;
   case DOUBLE:
-    sprintf(tmp, "prtd %s", variable->name);
+    sprintf(tmp, "prtd %s", name);
     break;
   }
   EmitLn(tmp);
-  EmitLn("prtcr");
 
+}
+
+void PrintArray(char type, char *name) {
+  switch(type) {
+  case CHAR:
+    sprintf(tmp, "prtac %s", name);
+    break;
+  case INT:
+    sprintf(tmp, "prtai %s", name);
+    break;
+  case FLOAT:
+    sprintf(tmp, "prtaf %s", name);
+    break;
+  case DOUBLE:
+    sprintf(tmp, "prtad %s", name);
+    break;
+  }
+  EmitLn(tmp);
+}
+void Print(char* Name) {
+  struct symbol_row *variable = findVariable(Name);
+  if(variable == NULL) error("Undefined variable");
+  next();
+  int isArray = 0;
+  if(TOKEN == LEFT_BRACKET) {
+    isArray = 1;
+    next();
+    Expression();
+    EmitLn("popx");
+    if(TOKEN != RIGHT_BRACKET) expected("closing array");
+    next();
+  }
+  if(isArray) PrintArray(variable->type, variable->name);
+  else PrintVar(variable->type, variable->name);
+  EmitLn("prtcr");
 }
 
 void DoPrint() {
@@ -243,42 +342,72 @@ void DoPrint() {
   if(TOKEN != LEFT_PAREN) expected("opening paretheses");
   next();
   if(TOKEN != NAME) expected("variable to print");
-  PrintVariable(VALUE);
-  next();
-
+  Print(VALUE);
   while(TOKEN == COMMA) {
     next();
     if(TOKEN != NAME) expected("variable to print");
-    PrintVariable(VALUE);
-    next();
+    Print(VALUE);
   }
   if(TOKEN != RIGHT_PAREN) expected("closing paretheses");
   next();
 
 }
 
-void ReadVariable(char* Name) {
-  struct symbol_row * variable = findVariable(Name);
-  if(variable == NULL) error("Undefined variable");
-
-  switch(variable->type) {
+void ReadVar(char type, char *name) {
+  switch(type) {
   case CHAR:
-    sprintf(tmp, "rdc %s", variable->name);
+    sprintf(tmp, "rdc %s", name);
     break;
   case INT:
-    sprintf(tmp, "rdi %s", variable->name);
+    sprintf(tmp, "rdi %s", name);
     break;
   case FLOAT:
-    sprintf(tmp, "rdf %s", variable->name);
+    sprintf(tmp, "rdf %s", name);
     break;
   case DOUBLE:
-    sprintf(tmp, "rdd %s", variable->name);
+    sprintf(tmp, "rdd %s", name);
     break;
   case STRING:
-    sprintf(tmp, "rds %s", variable->name);
+    sprintf(tmp, "rds %s", name);
   }
   EmitLn(tmp);
-  EmitLn("prtcr");
+}
+
+void ReadArray(char type, char *name) {
+  switch(type) {
+  case CHAR:
+    sprintf(tmp, "rdac %s", name);
+    break;
+  case INT:
+    sprintf(tmp, "rdai %s", name);
+    break;
+  case FLOAT:
+    sprintf(tmp, "rdaf %s", name);
+    break;
+  case DOUBLE:
+    sprintf(tmp, "rdad %s", name);
+    break;
+  case STRING:
+    sprintf(tmp, "rdas %s", name);
+  }
+  EmitLn(tmp);
+}
+
+void Read(char* Name) {
+  struct symbol_row * variable = findVariable(Name);
+  if(variable == NULL) error("Undefined variable");
+  next();
+  int isArray = 0;
+  if(TOKEN == LEFT_BRACKET) {
+    isArray = 1;
+    next();
+    Expression();
+    EmitLn("popx");
+    if(TOKEN != RIGHT_BRACKET) expected("closing array");
+    next();
+  }
+  if(isArray) ReadArray(variable->type, variable->name);
+  else ReadVar(variable->type, variable->name);
 
 }
 
@@ -287,23 +416,16 @@ void DoRead() {
   if(TOKEN != LEFT_PAREN) expected("opening paretheses");
   next();
   if(TOKEN != NAME) expected("variable to read");
-  ReadVariable(VALUE);
-  next();
+  Read(VALUE);
 
   while(TOKEN == COMMA) {
     next();
     if(TOKEN != NAME) expected("variable to read");
-    ReadVariable(VALUE);
-    next();
+    Read(VALUE);
   }
   if(TOKEN != RIGHT_PAREN) expected("closing paretheses");
   next();
 
-}
-
-void EmitEq(char * label) {
-  sprintf(tmp, "jmpeq %s", label);
-  EmitLn(tmp);
 }
 
 void EmitLabel(char *label) {
@@ -322,7 +444,8 @@ void DoIf() {
   next();
   char l1[BUFFER_SIZE];
   genLabel(l1);
-  EmitEq(l1);
+  sprintf(tmp, "jmpeq %s", l1);
+  EmitLn(tmp);
   CodeBlock();
   EmitLabel(l1);
 }
