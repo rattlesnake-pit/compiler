@@ -564,6 +564,27 @@ void DoIf() {
   EmitLabel(l1);
 }
 
+void DoWhile(){
+  char l0[BUFFER_SIZE];
+  genLabel(l0);
+  EmitLabel(l0);
+  next();
+  if(TOKEN != LEFT_PAREN) expected("opening paretheses");
+  next();
+  BoolExpression();
+  EmitLn("pushki 0");
+  EmitLn("cmp");
+  if(TOKEN != RIGHT_PAREN) expected("closing paretheses");
+  next();
+  char l1[BUFFER_SIZE];
+  genLabel(l1);
+  sprintf(tmp, "jmpeq %s", l1);
+  EmitLn(tmp);
+  CodeBlock();
+  sprintf(tmp, "jmp %s", l0);
+  EmitLn(tmp);
+  EmitLabel(l1);
+}
 void Statement() {
   if(isDeclaration(TOKEN)) {
     DoDeclaration();
@@ -579,6 +600,9 @@ void Statement() {
   }
   else if(TOKEN == READ){
     DoRead();
+  }
+  else if(TOKEN == WHILE){
+    DoWhile();
   }
   else {
     error("unrecognized statement");
