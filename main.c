@@ -552,16 +552,26 @@ void DoIf() {
   if(TOKEN != LEFT_PAREN) expected("opening paretheses");
   next();
   BoolExpression();
-  EmitLn("pushki 0");
-  EmitLn("cmp");
   if(TOKEN != RIGHT_PAREN) expected("closing paretheses");
   next();
   char l1[BUFFER_SIZE];
+  char l2[BUFFER_SIZE];
   genLabel(l1);
+  strcpy(l2, l1);
+  EmitLn("pushki 0");
+  EmitLn("cmp");
   sprintf(tmp, "jmpeq %s", l1);
   EmitLn(tmp);
   CodeBlock();
-  EmitLabel(l1);
+  if(TOKEN == ELSE) {
+    next();
+    genLabel(l2);
+    sprintf(tmp, "jmp %s", l2);
+    EmitLn(tmp);
+    EmitLabel(l1);
+    CodeBlock();
+  }
+  EmitLabel(l2);
 }
 
 void DoWhile() {
