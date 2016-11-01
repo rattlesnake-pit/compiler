@@ -564,7 +564,7 @@ void DoIf() {
   EmitLabel(l1);
 }
 
-void DoWhile(){
+void DoWhile() {
   char l0[BUFFER_SIZE];
   genLabel(l0);
   EmitLabel(l0);
@@ -585,6 +585,46 @@ void DoWhile(){
   EmitLn(tmp);
   EmitLabel(l1);
 }
+
+void DoFor() {
+  next();
+  if(TOKEN != LEFT_PAREN) expected("opening paretheses");
+  next();
+  if(TOKEN == NAME) DoAssignment();
+  if(TOKEN != SEMI_COLON) expected("semicolon");
+  next();
+  char l0[BUFFER_SIZE];
+  genLabel(l0);
+  char l1[BUFFER_SIZE];
+  genLabel(l1);
+  char l2[BUFFER_SIZE];
+  genLabel(l2);
+  char l3[BUFFER_SIZE];
+  genLabel(l3);
+
+  EmitLabel(l0);
+  BoolExpression();
+  EmitLn("pushki 0");
+  EmitLn("cmp");
+  sprintf(tmp, "jmpeq %s", l3);
+  EmitLn(tmp);
+  sprintf(tmp, "jmp %s", l2);
+  EmitLn(tmp);
+  if(TOKEN != SEMI_COLON) expected("semicolon");
+  next();
+  EmitLabel(l1);
+  if(TOKEN == NAME) DoAssignment();
+  sprintf(tmp, "jmp %s", l0);
+  EmitLn(tmp);
+  if(TOKEN != RIGHT_PAREN) expected("closing paretheses");
+  next();
+  EmitLabel(l2);
+  CodeBlock();
+  sprintf(tmp, "jmp %s", l1);
+  EmitLn(tmp);
+  EmitLabel(l3);
+}
+
 void Statement() {
   if(isDeclaration(TOKEN)) {
     DoDeclaration();
@@ -598,11 +638,14 @@ void Statement() {
   else if(TOKEN == PRINT) {
     DoPrint();
   }
-  else if(TOKEN == READ){
+  else if(TOKEN == READ) {
     DoRead();
   }
-  else if(TOKEN == WHILE){
+  else if(TOKEN == WHILE) {
     DoWhile();
+  }
+  else if(TOKEN == FOR) {
+    DoFor();
   }
   else {
     error("unrecognized statement");

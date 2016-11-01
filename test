@@ -1,9 +1,25 @@
 {
-  int[10] a; int i; i = 0
-  read(a[i])
-  a[i+1] = a[i] + 3
-  print(a[i], a[i+1])
-  if((a[i] > 5) && (a[i] < 10) || a[i] / 2 == 1) {
-    print(a)
+  int[4] v
+  int i
+  int j
+  int aux
+  v[0] = 10; v[1] = 9; v[2] = 6; v[3] = 11
+
+  for(i = 0; i < 4; i = i + 1) {
+    print(v[i])
+  }
+
+  for(i = 0; i < 4; i = i + 1) {
+    for(j = i + 1; j < 4; j = j + 1) {
+      if(v[i] > v[j]) {
+        aux = v[i]
+        v[i] = v[j]
+        v[j] = aux
+      }
+    }
+  }
+
+  for(i = 0; i < 4; i = i + 1) {
+    print(v[i])
   }
 }
