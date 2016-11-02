@@ -80,11 +80,8 @@ void insertPendingLabel();
 int isAlphaNum(char c);
 int isDeclaration(enum TOKENS TOKEN);
 int isAssignment(enum TOKENS TOKEN);
-<<<<<<< ebbedadfa09b9cdd18846852bbe12bda14ca3d51
 int isRelop(enum TOKENS TOKEN);
-=======
 int getStringSize();
->>>>>>> Add string declaration and string array declaration
 enum TOKENS TOKEN;
 char look;
 char VALUE[BUFFER_SIZE];

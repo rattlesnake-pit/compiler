@@ -147,6 +147,8 @@ void LoadVar(char type, char* name) {
   case DOUBLE:
     sprintf(tmp, "pushd %s", name);
     break;
+  case STRING:
+    sprintf(tmp, "pushs %s", name);
   }
   EmitLn(tmp);
 }
@@ -165,11 +167,12 @@ void LoadArray(char type, char* name) {
     sprintf(tmp, "pushad %s", name);
     break;
   case STRING:
-    sprintf(tmp, "pushs %s", variable->name);
+    sprintf(tmp, "pushas %s", name);
   }
   EmitLn(tmp);
 
 }
+
 void Load(char *Name) {
   struct symbol_row * variable = findVariable(Name);
   if(variable == NULL) error("Undefined variable");
@@ -252,13 +255,14 @@ void Substract() {
 
 int isVarString(char *name) {
   struct symbol_row * variable = findVariable(name);
+  if(variable == NULL) error("Undefined variable");
   if(variable->type == STRING)
     return 1;
   else
     return 0;
 }
 
-AssignConstant() {
+void AssignConstant() {
   //TODO: basically does pushks with the word i have
 }
 
@@ -282,7 +286,7 @@ void stringExpression() {
   }
   else {
     if(TOKEN == NAME) {
-      LoadVar(VALUE);
+      Load(VALUE);
       next();//not sure if i need this next
     }
   }
@@ -452,6 +456,9 @@ void StoreArray(char* name) {
   if(variable->type == DOUBLE)
     sprintf(tmp, "popad %s", name);
 
+  if(variable->type == STRING)
+    sprintf(tmp, "popas %s", name);
+
   EmitLn(tmp);
 }
 
@@ -470,20 +477,15 @@ void DoAssignment() {
   }
   matchString("=");
   next();
-<<<<<<< ebbedadfa09b9cdd18846852bbe12bda14ca3d51
-  BoolExpression();
+  if(isVarString(name))
+    stringExpression();
+  else
+    BoolExpression();
   if(isArray) {
     EmitLn("movy");
     StoreArray(name);
   }
   else StoreVar(name);
-=======
-  if(isVarString(name))
-    stringExpression();
-  else
-    Expression();
-  Store(name);
->>>>>>> Add string declaration and string array declaration
 }
 
 void PrintVar(char type, char *name) {
@@ -500,6 +502,8 @@ void PrintVar(char type, char *name) {
   case DOUBLE:
     sprintf(tmp, "prtd %s", name);
     break;
+  case STRING:
+    sprintf(tmp, "prts %s", name);
   }
   EmitLn(tmp);
 
@@ -520,7 +524,7 @@ void PrintArray(char type, char *name) {
     sprintf(tmp, "prtad %s", name);
     break;
   case STRING:
-    sprintf(tmp, "prts %s", variable->name);
+    sprintf(tmp, "prtas %s", name);
   }
   EmitLn(tmp);
 }
