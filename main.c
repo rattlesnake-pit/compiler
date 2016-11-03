@@ -43,7 +43,7 @@ void stringArrayDeclaration(char *def, char *value, int arraySize)
   next();
   matchString(")");
   int totalValue = stringSize * arraySize;
-  insertSymbol(STRING, totalValue, temp);
+  insertSymbol2(STRING, totalValue, temp, stringSize);
 }
 
 void DoArrayDeclaration(enum TOKENS type) {
@@ -174,14 +174,18 @@ void LoadArray(char type, char* name) {
 }
 
 void LoadString(char *Name) {
-  //TODO: do a custom load of the string variable
   struct symbol_row * variable = findVariable(Name);
   if(variable == NULL) error("Undefined variable");
   int isArray = 0;
-  if(look == LEFT_BRACKET) {
-    isArray = 0;
+  next();
+  if(TOKEN == LEFT_BRACKET) {
+    isArray = 1;
     next();
     Expression();
+    int stringSize = variable->stringSize;
+    sprintf(tmp,"pushki %d",stringSize);
+    EmitLn(tmp);
+    EmitLn("MUL");
     EmitLn("popx");
     if(TOKEN != RIGHT_BRACKET) expected("closing array bracket");
     next();
@@ -301,6 +305,7 @@ void stringExpression() {
     AssignConstant();//this should do pushks
     next();
     matchString("\"");
+    next();
   }
   else {
     if(TOKEN == NAME) {
@@ -480,6 +485,14 @@ void StoreArray(char* name) {
   EmitLn(tmp);
 }
 
+int obtainStringSize(char *name) {
+  //TODO: implement method
+  struct symbol_row * variable = findVariable(name);
+  if(variable == NULL) error("variable not found");
+  if(variable->type != STRING) error("wrong type");
+  return variable->stringSize;
+}
+
 void DoAssignment() {
   char name[BUFFER_SIZE];
   strcpy(name, VALUE);
@@ -489,6 +502,12 @@ void DoAssignment() {
     isArray = 1;
     next();
     Expression();
+    if(isVarString(name)) {
+      int strSize = obtainStringSize(name);
+      sprintf(tmp,"pushki %d",strSize);
+      EmitLn(tmp);
+      EmitLn("MUL");
+    }
     EmitLn("popy");
     if(TOKEN != RIGHT_BRACKET) expected("closing array");
     next();
@@ -497,7 +516,6 @@ void DoAssignment() {
   next();
   if(isVarString(name)){
     stringExpression();
-    //next();
   }
   else
     BoolExpression();
@@ -507,7 +525,6 @@ void DoAssignment() {
   }
   else {
     StoreVar(name);
-    next();
   }
 }
 
@@ -761,6 +778,7 @@ void Statement() {
     DoFor();
   }
   else {
+    printf("rip %s\n",VALUE);
     error("unrecognized statement");
   }
 }
