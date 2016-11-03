@@ -28,6 +28,23 @@ void EmitArrayDeclaration(char* def, char* name, int size) {
   EmitLn(tmp);
 }
 
+void EmitStringArrayDeclaration(char *def, char *name, int strSize, int arrSize)
+{
+  sprintf(tmp, "%s %s, %d, %d", def, name, strSize, arrSize);
+  EmitLn(tmp);
+}
+
+void stringArrayDeclaration(char *def, char *value, int arraySize)
+{
+  char temp[BUFFER_SIZE];
+  strcpy(temp,value);
+  int stringSize = getStringSize();
+  EmitStringArrayDeclaration(def, temp, stringSize, arraySize);
+  next();
+  matchString(")");
+  int totalValue = stringSize * arraySize;
+  insertSymbol2(STRING, totalValue, temp, stringSize);
+}
 
 void DoArrayDeclaration(enum TOKENS type) {
   next();
@@ -57,9 +74,23 @@ void DoArrayDeclaration(enum TOKENS type) {
       EmitArrayDeclaration("defad", VALUE, arraySize);
       insertSymbol(DOUBLE, DOUBLE_SZ * arraySize, VALUE);
       break;
+    case STRING_TYPE:
+      stringArrayDeclaration("defas", VALUE, arraySize);
     default:
       break;
   }
+}
+
+void stringDeclaration(char* def, char* value) {
+  char temp[BUFFER_SIZE];
+  strcpy(temp,value);
+  int stringSize = getStringSize();
+  //using array declaration because it has the same format
+  //it's basically defs name,10
+  EmitArrayDeclaration(def, temp, stringSize);
+  insertSymbol(STRING,stringSize,temp);
+  next();
+  matchString(")");
 }
 
 void DoVariableDeclaration(enum TOKENS type) {
@@ -79,6 +110,8 @@ void DoVariableDeclaration(enum TOKENS type) {
     case DOUBLE_TYPE:
       EmitDeclaration("defd", VALUE);
       insertSymbol(DOUBLE, DOUBLE_SZ, VALUE);
+    case STRING_TYPE:
+      stringDeclaration("defs", VALUE);
       break;
     default:
       break;
@@ -114,6 +147,8 @@ void LoadVar(char type, char* name) {
   case DOUBLE:
     sprintf(tmp, "pushd %s", name);
     break;
+  case STRING:
+    sprintf(tmp, "pushs %s", name);
   }
   EmitLn(tmp);
 }
@@ -131,10 +166,34 @@ void LoadArray(char type, char* name) {
   case DOUBLE:
     sprintf(tmp, "pushad %s", name);
     break;
+  case STRING:
+    sprintf(tmp, "pushas %s", name);
   }
   EmitLn(tmp);
 
 }
+
+void LoadString(char *Name) {
+  struct symbol_row * variable = findVariable(Name);
+  if(variable == NULL) error("Undefined variable");
+  int isArray = 0;
+  next();
+  if(TOKEN == LEFT_BRACKET) {
+    isArray = 1;
+    next();
+    Expression();
+    int stringSize = variable->stringSize;
+    sprintf(tmp,"pushki %d",stringSize);
+    EmitLn(tmp);
+    EmitLn("MUL");
+    EmitLn("popx");
+    if(TOKEN != RIGHT_BRACKET) expected("closing array bracket");
+    next();
+  }
+  if(isArray)LoadArray(variable->type, variable->name);
+  else LoadVar(variable->type, variable->name);
+}
+
 void Load(char *Name) {
   struct symbol_row * variable = findVariable(Name);
   if(variable == NULL) error("Undefined variable");
@@ -213,6 +272,47 @@ void Substract() {
   next();
   MulExpression();
   EmitLn("sub");
+}
+
+int isVarString(char *name) {
+  struct symbol_row * variable = findVariable(name);
+  if(variable == NULL) error("Undefined variable");
+  if(variable->type == STRING)
+    return 1;
+  else
+    return 0;
+}
+
+void AssignConstant() {
+  if(strlen(VALUE) > 256){expected("string is too long");}
+  sprintf(tmp,"pushks \"%s\"", VALUE);
+  EmitLn(tmp);
+}
+
+/*
+  possible assignments are
+  something = "constant";
+  something = somethingElse
+  something = somethingElse[i]
+  something[i] = "constant"
+  something[i] = somethingElse[i]
+  something[i] = somethingElse
+  ill start with the simple ones, i need to see what's up with arrays later
+*/
+void stringExpression() {
+  if(TOKEN == QUOTE) {
+    next();
+    AssignConstant();//this should do pushks
+    next();
+    matchString("\"");
+    next();
+  }
+  else {
+    if(TOKEN == NAME) {
+      LoadString(VALUE);
+      //next();//not sure if i need this next
+    }
+  }
 }
 
 void Expression() {
@@ -358,6 +458,9 @@ void StoreVar(char* name) {
   if(variable->type == DOUBLE)
     sprintf(tmp, "popd %s", name);
 
+  if(variable->type == STRING){
+    sprintf(tmp, "pops %s", name);}
+
   EmitLn(tmp);
 }
 
@@ -376,7 +479,18 @@ void StoreArray(char* name) {
   if(variable->type == DOUBLE)
     sprintf(tmp, "popad %s", name);
 
+  if(variable->type == STRING)
+    sprintf(tmp, "popas %s", name);
+
   EmitLn(tmp);
+}
+
+int obtainStringSize(char *name) {
+  //TODO: implement method
+  struct symbol_row * variable = findVariable(name);
+  if(variable == NULL) error("variable not found");
+  if(variable->type != STRING) error("wrong type");
+  return variable->stringSize;
 }
 
 void DoAssignment() {
@@ -388,18 +502,30 @@ void DoAssignment() {
     isArray = 1;
     next();
     Expression();
+    if(isVarString(name)) {
+      int strSize = obtainStringSize(name);
+      sprintf(tmp,"pushki %d",strSize);
+      EmitLn(tmp);
+      EmitLn("MUL");
+    }
     EmitLn("popy");
     if(TOKEN != RIGHT_BRACKET) expected("closing array");
     next();
   }
   matchString("=");
   next();
-  BoolExpression();
+  if(isVarString(name)){
+    stringExpression();
+  }
+  else
+    BoolExpression();
   if(isArray) {
     EmitLn("movy");
     StoreArray(name);
   }
-  else StoreVar(name);
+  else {
+    StoreVar(name);
+  }
 }
 
 void PrintVar(char type, char *name) {
@@ -416,6 +542,8 @@ void PrintVar(char type, char *name) {
   case DOUBLE:
     sprintf(tmp, "prtd %s", name);
     break;
+  case STRING:
+    sprintf(tmp, "prts %s", name);
   }
   EmitLn(tmp);
 
@@ -435,6 +563,8 @@ void PrintArray(char type, char *name) {
   case DOUBLE:
     sprintf(tmp, "prtad %s", name);
     break;
+  case STRING:
+    sprintf(tmp, "prtas %s", name);
   }
   EmitLn(tmp);
 }
@@ -648,6 +778,7 @@ void Statement() {
     DoFor();
   }
   else {
+    printf("rip %s\n",VALUE);
     error("unrecognized statement");
   }
 }

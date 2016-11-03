@@ -9,6 +9,7 @@ char* str_tokens[] = {
   "int",
   "float",
   "double",
+  "string",
   "if",
   "else",
   "for",
@@ -38,6 +39,7 @@ char* str_tokens[] = {
   "&&",
   "||",
   "!",
+  "\"",
 };
 
 int tokens_size = sizeof str_tokens / sizeof *str_tokens;

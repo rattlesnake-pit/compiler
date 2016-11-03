@@ -21,39 +21,41 @@ enum TOKENS {
   INT_TYPE,     // 1
   FLOAT_TYPE,   // 2
   DOUBLE_TYPE,  // 3
-  IF,           // 4
-  ELSE,         // 5
-  FOR,          // 6
-  WHILE,        // 7
-  PRINT,        // 8
-  READ,         // 9
-  LEFT_PAREN,   // 10
-  RIGHT_PAREN,  // 11
-  ADD,          // 12
-  SUB,          // 13
-  MUL,          // 14
-  DIV,          // 15
-  LESS,         // 16
-  LESS_EQUAL,   // 17
-  GREATER,      // 18
-  GREATER_EQUAL,// 19
-  EQUAL,        // 20
-  NOT_EQUAL,    // 21
-  LEFT_BRACE,   // 22
-  RIGHT_BRACE,  // 23
-  LEFT_BRACKET, // 24
-  RIGHT_BRACKET,// 25
-  ASSIGN,       // 26
-  SEMI_COLON,   // 27
-  ENDLINE,      // 28
-  COMMA,        // 29
+  STRING_TYPE,  // 4
+  IF,           // 5
+  ELSE,         // 6
+  FOR,          // 7
+  WHILE,        // 8
+  PRINT,        // 9
+  READ,         //10
+  LEFT_PAREN,   // 11
+  RIGHT_PAREN,  // 12
+  ADD,          // 13
+  SUB,          // 14
+  MUL,          // 15
+  DIV,          // 16
+  LESS,         // 17
+  LESS_EQUAL,   // 18
+  GREATER,      // 19
+  GREATER_EQUAL,// 20
+  EQUAL,        // 21
+  NOT_EQUAL,    // 22
+  LEFT_BRACE,   // 23
+  RIGHT_BRACE,  // 24
+  LEFT_BRACKET, // 25
+  RIGHT_BRACKET,// 26
+  ASSIGN,       // 27
+  SEMI_COLON,   // 28
+  ENDLINE,      // 29
+  COMMA,        // 30
   AND,          // 30
   OR,           // 31
   NOT,          // 32
-  NAME,         // 33
-  SYMBOL,       // 34
-  NUMBER,       // 35
-  DECIMAL       // 36
+  QUOTE,        // 33
+  NAME,         // 34
+  SYMBOL,       // 35
+  NUMBER,       // 36
+  DECIMAL       // 37
 };
 
 extern char* str_tokens[];
@@ -79,6 +81,7 @@ int isAlphaNum(char c);
 int isDeclaration(enum TOKENS TOKEN);
 int isAssignment(enum TOKENS TOKEN);
 int isRelop(enum TOKENS TOKEN);
+int getStringSize();
 enum TOKENS TOKEN;
 char look;
 char VALUE[BUFFER_SIZE];

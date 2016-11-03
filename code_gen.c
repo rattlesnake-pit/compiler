@@ -20,6 +20,17 @@ void insertSymbol(char type, int type_sz, char* name) {
   DS += type_sz;
 }
 
+void insertSymbol2(char type, int type_sz, char* name, int str_size) {
+  struct symbol_row row;
+  strcpy(row.name, name);
+  row.start = DS;
+  row.type = type;
+  row.stringSize = str_size;
+  symbol_table[ST_END] = row;
+  ST_END++;
+  DS += type_sz;
+}
+
 struct symbol_row * findVariable(char *value){
   for(int i = 0; i < ST_END; i++){
     if(strcmp(symbol_table[i].name,value) == 0){
