@@ -173,6 +173,23 @@ void LoadArray(char type, char* name) {
 
 }
 
+void LoadString(char *Name) {
+  //TODO: do a custom load of the string variable
+  struct symbol_row * variable = findVariable(Name);
+  if(variable == NULL) error("Undefined variable");
+  int isArray = 0;
+  if(look == LEFT_BRACKET) {
+    isArray = 0;
+    next();
+    Expression();
+    EmitLn("popx");
+    if(TOKEN != RIGHT_BRACKET) expected("closing array bracket");
+    next();
+  }
+  if(isArray)LoadArray(variable->type, variable->name);
+  else LoadVar(variable->type, variable->name);
+}
+
 void Load(char *Name) {
   struct symbol_row * variable = findVariable(Name);
   if(variable == NULL) error("Undefined variable");
@@ -263,7 +280,9 @@ int isVarString(char *name) {
 }
 
 void AssignConstant() {
-  //TODO: basically does pushks with the word i have
+  if(strlen(VALUE) > 256){expected("string is too long");}
+  sprintf(tmp,"pushks \"%s\"", VALUE);
+  EmitLn(tmp);
 }
 
 /*
@@ -282,12 +301,11 @@ void stringExpression() {
     AssignConstant();//this should do pushks
     next();
     matchString("\"");
-    next();//not sure if i need this nex
   }
   else {
     if(TOKEN == NAME) {
-      Load(VALUE);
-      next();//not sure if i need this next
+      LoadString(VALUE);
+      //next();//not sure if i need this next
     }
   }
 }
@@ -435,8 +453,8 @@ void StoreVar(char* name) {
   if(variable->type == DOUBLE)
     sprintf(tmp, "popd %s", name);
 
-  if(variable->type == STRING)
-    sprintf(tmp, "pops %s", name);
+  if(variable->type == STRING){
+    sprintf(tmp, "pops %s", name);}
 
   EmitLn(tmp);
 }
@@ -477,15 +495,20 @@ void DoAssignment() {
   }
   matchString("=");
   next();
-  if(isVarString(name))
+  if(isVarString(name)){
     stringExpression();
+    //next();
+  }
   else
     BoolExpression();
   if(isArray) {
     EmitLn("movy");
     StoreArray(name);
   }
-  else StoreVar(name);
+  else {
+    StoreVar(name);
+    next();
+  }
 }
 
 void PrintVar(char type, char *name) {
