@@ -136,18 +136,28 @@ void DoDeclaration() {
 void LoadVar(char type, char* name) {
   switch(type) {
   case CHAR:
+    //the value of pushc goes as the first parameter TODO
+    doVarOp(0,name);
     sprintf(tmp, "pushc %s", name);
     break;
   case INT:
+    //value of pushi goes as the first parameter TODO:
+    doVarOp(0,name);
     sprintf(tmp, "pushi %s", name);
     break;
   case FLOAT:
+    //the value of pushf goes as the first parameter TODO:
+    doVarOp(0,name);
     sprintf(tmp, "pushf %s", name);
     break;
   case DOUBLE:
+    //the value of pushd goes as the first parameter TODO:
+    doVarOp(0,name);
     sprintf(tmp, "pushd %s", name);
     break;
   case STRING:
+    //the value of pushd goes as the first parameter TODO:
+    doVarOp(0,name);
     sprintf(tmp, "pushs %s", name);
   }
   EmitLn(tmp);
@@ -155,18 +165,23 @@ void LoadVar(char type, char* name) {
 void LoadArray(char type, char* name) {
   switch(type) {
   case CHAR:
+    doVarOp(0,name); //replace 0 with the value of pushac TODO:
     sprintf(tmp, "pushac %s", name);
     break;
   case INT:
+    doVarOp(0,name); //TODO:
     sprintf(tmp, "pushai %s", name);
     break;
   case FLOAT:
+    doVarOp(0,name);//TODO:
     sprintf(tmp, "pushaf %s", name);
     break;
   case DOUBLE:
+    doVarOp(0,name);//TODO:
     sprintf(tmp, "pushad %s", name);
     break;
   case STRING:
+    doVarOp(0,name);//TODO:
     sprintf(tmp, "pushas %s", name);
   }
   EmitLn(tmp);
@@ -183,9 +198,13 @@ void LoadString(char *Name) {
     next();
     Expression();
     int stringSize = variable->stringSize;
+    doOneByteOp(0);//here goes the value of pushki TODO:
+    addKint(stringSize);
     sprintf(tmp,"pushki %d",stringSize);
     EmitLn(tmp);
+    doOneByteOp(0);//instead of zero goes the value of MUL TODO:
     EmitLn("MUL");
+    doVarOp(0,name);//instead of zero goes the value of popx TODO:
     EmitLn("popx");
     if(TOKEN != RIGHT_BRACKET) expected("closing array bracket");
     next();
@@ -203,6 +222,7 @@ void Load(char *Name) {
     isArray = 1;
     next();
     Expression();
+    doOneByteOp(0); //TODO: replace 0 with popx
     EmitLn("popx");
     if(TOKEN != RIGHT_BRACKET) expected("closing array bracket");
     next();
@@ -212,10 +232,16 @@ void Load(char *Name) {
 }
 
 void LoadConst(char* VALUE) {
-  if(TOKEN == NUMBER)
+  if(TOKEN == NUMBER) {
+    doOneByteOp(0);//here goes the value of pushki TODO:
+    addKint(stringSize);
     sprintf(tmp, "pushki %s", VALUE);
-  else if(TOKEN == DECIMAL)
+  }
+  else if(TOKEN == DECIMAL) {
+    doOneByteOp(0);//here goes the value of pushkf TODO:
+    addKfloat(TOKEN);
     sprintf(tmp, "pushkf %s", VALUE);
+  }
   EmitLn(tmp);
 }
 
@@ -243,12 +269,14 @@ void Factor() {
 void Multiply() {
   next();
   Factor();
+  doOneByteOp(0);//TODO: replace 0 with the value of mul
   EmitLn("mul");
 }
 
 void Divide() {
   next();
   Factor();
+  doOneByteOp(0);//TODO replace 0 with value of div
   EmitLn("div");
 }
 
@@ -265,12 +293,14 @@ void MulExpression() {
 void Add() {
   next();
   MulExpression();
+  doOneByteOp(0);//TODO replace 0 with value of add
   EmitLn("add");
 }
 
 void Substract() {
   next();
   MulExpression();
+  doOneByteOp(0)//TODO replace 0 with value of sub
   EmitLn("sub");
 }
 
@@ -285,6 +315,9 @@ int isVarString(char *name) {
 
 void AssignConstant() {
   if(strlen(VALUE) > 256){expected("string is too long");}
+  doOneByteOp(0)//TODO replace 0 with value of pushks
+  char temp[256] = strcpy(temp,VALUE)
+  addKstring(temp);
   sprintf(tmp,"pushks \"%s\"", VALUE);
   EmitLn(tmp);
 }
@@ -310,7 +343,6 @@ void stringExpression() {
   else {
     if(TOKEN == NAME) {
       LoadString(VALUE);
-      //next();//not sure if i need this next
     }
   }
 }
@@ -486,7 +518,6 @@ void StoreArray(char* name) {
 }
 
 int obtainStringSize(char *name) {
-  //TODO: implement method
   struct symbol_row * variable = findVariable(name);
   if(variable == NULL) error("variable not found");
   if(variable->type != STRING) error("wrong type");
