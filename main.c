@@ -289,19 +289,9 @@ void AssignConstant() {
   EmitLn(tmp);
 }
 
-/*
-  possible assignments are
-  something = "constant";
-  something = somethingElse
-  something = somethingElse[i]
-  something[i] = "constant"
-  something[i] = somethingElse[i]
-  something[i] = somethingElse
-  ill start with the simple ones, i need to see what's up with arrays later
-*/
 void stringExpression() {
   if(TOKEN == QUOTE) {
-    next();
+    nextString();
     AssignConstant();//this should do pushks
     next();
     matchString("\"");
@@ -577,6 +567,11 @@ void Print(char* Name) {
     isArray = 1;
     next();
     Expression();
+    if(variable->type == STRING) {
+      sprintf(tmp,"pushki %d",variable->stringSize);
+      EmitLn(tmp);
+      EmitLn("MUL");
+    }
     EmitLn("popx");
     if(TOKEN != RIGHT_BRACKET) expected("closing array");
     next();
@@ -651,6 +646,11 @@ void Read(char* Name) {
     isArray = 1;
     next();
     Expression();
+    if(variable->type == STRING) {
+      sprintf(tmp,"pushki %d",variable->stringSize);
+      EmitLn(tmp);
+      EmitLn("MUL");
+    }
     EmitLn("popx");
     if(TOKEN != RIGHT_BRACKET) expected("closing array");
     next();
