@@ -110,6 +110,7 @@ void DoVariableDeclaration(enum TOKENS type) {
     case DOUBLE_TYPE:
       EmitDeclaration("defd", VALUE);
       insertSymbol(DOUBLE, DOUBLE_SZ, VALUE);
+      break;
     case STRING_TYPE:
       stringDeclaration("defs", VALUE);
       break;
