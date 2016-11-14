@@ -136,28 +136,23 @@ void DoDeclaration() {
 void LoadVar(char type, char* name) {
   switch(type) {
   case CHAR:
-    //the value of pushc goes as the first parameter TODO
-    doVarOp(0,name);
+    doVarOp(12,name);
     sprintf(tmp, "pushc %s", name);
     break;
   case INT:
-    //value of pushi goes as the first parameter TODO:
-    doVarOp(0,name);
+    doVarOp(13,name);
     sprintf(tmp, "pushi %s", name);
     break;
   case FLOAT:
-    //the value of pushf goes as the first parameter TODO:
-    doVarOp(0,name);
+    doVarOp(14,name);
     sprintf(tmp, "pushf %s", name);
     break;
   case DOUBLE:
-    //the value of pushd goes as the first parameter TODO:
-    doVarOp(0,name);
+    doVarOp(15,name);
     sprintf(tmp, "pushd %s", name);
     break;
   case STRING:
-    //the value of pushd goes as the first parameter TODO:
-    doVarOp(0,name);
+    doVarOp(16,name);
     sprintf(tmp, "pushs %s", name);
   }
   EmitLn(tmp);
@@ -165,23 +160,23 @@ void LoadVar(char type, char* name) {
 void LoadArray(char type, char* name) {
   switch(type) {
   case CHAR:
-    doVarOp(0,name); //replace 0 with the value of pushac TODO:
+    doVarOp(17,name);
     sprintf(tmp, "pushac %s", name);
     break;
   case INT:
-    doVarOp(0,name); //TODO:
+    doVarOp(18,name);
     sprintf(tmp, "pushai %s", name);
     break;
   case FLOAT:
-    doVarOp(0,name);//TODO:
+    doVarOp(19,name);
     sprintf(tmp, "pushaf %s", name);
     break;
   case DOUBLE:
-    doVarOp(0,name);//TODO:
+    doVarOp(20,name);
     sprintf(tmp, "pushad %s", name);
     break;
   case STRING:
-    doVarOp(0,name);//TODO:
+    doVarOp(21,name);
     sprintf(tmp, "pushas %s", name);
   }
   EmitLn(tmp);
@@ -198,13 +193,12 @@ void LoadString(char *Name) {
     next();
     Expression();
     int stringSize = variable->stringSize;
-    doOneByteOp(0);//here goes the value of pushki TODO:
-    addKint(stringSize);
+    pushkiDirect(stringSize);
     sprintf(tmp,"pushki %d",stringSize);
     EmitLn(tmp);
-    doOneByteOp(0);//instead of zero goes the value of MUL TODO:
+    doOneByteOp(61);
     EmitLn("MUL");
-    doVarOp(0,name);//instead of zero goes the value of popx TODO:
+    doOneByteOp(32);
     EmitLn("popx");
     if(TOKEN != RIGHT_BRACKET) expected("closing array bracket");
     next();
@@ -222,7 +216,7 @@ void Load(char *Name) {
     isArray = 1;
     next();
     Expression();
-    doOneByteOp(0); //TODO: replace 0 with popx
+    doOneByteOp(32);
     EmitLn("popx");
     if(TOKEN != RIGHT_BRACKET) expected("closing array bracket");
     next();
@@ -232,14 +226,15 @@ void Load(char *Name) {
 }
 
 void LoadConst(char* VALUE) {
+  char temp[256];
   if(TOKEN == NUMBER) {
-    doOneByteOp(0);//here goes the value of pushki TODO:
-    addKint(stringSize);
+    strcpy(temp,VALUE);
+    pushki(temp);
     sprintf(tmp, "pushki %s", VALUE);
   }
   else if(TOKEN == DECIMAL) {
-    doOneByteOp(0);//here goes the value of pushkf TODO:
-    addKfloat(TOKEN);
+    strcpy(temp,VALUE);
+    pushkf(temp);
     sprintf(tmp, "pushkf %s", VALUE);
   }
   EmitLn(tmp);
@@ -269,14 +264,14 @@ void Factor() {
 void Multiply() {
   next();
   Factor();
-  doOneByteOp(0);//TODO: replace 0 with the value of mul
+  doOneByteOp(61);
   EmitLn("mul");
 }
 
 void Divide() {
   next();
   Factor();
-  doOneByteOp(0);//TODO replace 0 with value of div
+  doOneByteOp(62);
   EmitLn("div");
 }
 
@@ -293,14 +288,14 @@ void MulExpression() {
 void Add() {
   next();
   MulExpression();
-  doOneByteOp(0);//TODO replace 0 with value of add
+  doOneByteOp(59);
   EmitLn("add");
 }
 
 void Substract() {
   next();
   MulExpression();
-  doOneByteOp(0)//TODO replace 0 with value of sub
+  doOneByteOp(60);
   EmitLn("sub");
 }
 
@@ -315,23 +310,13 @@ int isVarString(char *name) {
 
 void AssignConstant() {
   if(strlen(VALUE) > 256){expected("string is too long");}
-  doOneByteOp(0)//TODO replace 0 with value of pushks
-  char temp[256] = strcpy(temp,VALUE)
-  addKstring(temp);
+  char temp[256];
+  strcpy(temp,VALUE);
+  pushks(temp);
   sprintf(tmp,"pushks \"%s\"", VALUE);
   EmitLn(tmp);
 }
 
-/*
-  possible assignments are
-  something = "constant";
-  something = somethingElse
-  something = somethingElse[i]
-  something[i] = "constant"
-  something[i] = somethingElse[i]
-  something[i] = somethingElse
-  ill start with the simple ones, i need to see what's up with arrays later
-*/
 void stringExpression() {
   if(TOKEN == QUOTE) {
     next();
@@ -357,17 +342,32 @@ void Expression() {
   }
 }
 
+int getJumpType(char *jumpType) {
+  //TODO: compare jump types and return the correct value
+  return -1;
+}
+
 void EmitComparison(char* jumpType) {
   char l1[BUFFER_SIZE];
   char l2[BUFFER_SIZE];
   genLabel(l1);
   genLabel(l2);
+  int jtype = getJumpType(jumpType); //TODO: implement this to get a diff number depending on the jumptype
+  doOneByteOp(jtype);
+  //TODO: honestly not sure how to implement doJump properly
+  doJump(l1);
   sprintf(tmp, "%s %s", jumpType, l1);
   EmitLn(tmp);
+  pushki("0");
   EmitLn("pushki 0");
+  //  TODO: still don't know how to implement jump
+  doOneByteOp(48);
+  doJump(l2);//TODO: implement this later
   sprintf(tmp, "jmp %s", l2);
   EmitLn(tmp);
+  //idk what emit label does exactly
   EmitLabel(l1);
+  pushki("1");
   EmitLn("pushki 1");
   EmitLabel(l2);
 }
@@ -375,6 +375,7 @@ void EmitComparison(char* jumpType) {
 void Compare() {
   next();
   Expression();
+  doOneByteOp(64);
   EmitLn("cmp");
 }
 
@@ -427,14 +428,20 @@ void NotIt() {
   char l2[BUFFER_SIZE];
   genLabel(l1);
   genLabel(l2);
+  pushki("0");
   EmitLn("pushki 0");
+  doOneByteOp(64);
   EmitLn("cmp");
+  //TODO: jmpeq code gen goes here, idk how to do that though
   sprintf(tmp, "jmpeq %s", l1);
   EmitLn(tmp);
+  pushki("0");
   EmitLn("pushki 0");
+  //TODO: code gen of jump goes here idk how to do that
   sprintf(tmp, "jmp %s", l2);
   EmitLn(tmp);
   EmitLabel(l1);
+  pushki("1");
   EmitLn("pushki 1");
   EmitLabel(l2);
 }
@@ -449,6 +456,7 @@ void NotFactor() {
 }
 
 void DoAnd() {
+  doOneByteOp(61);
   EmitLn("mul");
 }
 
@@ -462,6 +470,7 @@ void BoolTerm() {
 }
 
 void DoOr() {
+  doOneByteOp(59);
   EmitLn("add");
 }
 
@@ -478,20 +487,30 @@ void StoreVar(char* name) {
   struct symbol_row * variable = findVariable(name);
   if(variable == NULL) error("variable not found");
 
-  if(variable->type == CHAR)
+  if(variable->type == CHAR) {
     sprintf(tmp, "popc %s", name);
+    doVarOp(27,name);
+  }
 
-  if(variable->type == INT)
+  if(variable->type == INT) {
     sprintf(tmp, "popi %s", name);
+    doVarOp(28,name);
+  }
 
-  if(variable->type == FLOAT)
+  if(variable->type == FLOAT) {
     sprintf(tmp, "popf %s", name);
+    doVarOp(29,name);
+  }
 
-  if(variable->type == DOUBLE)
+  if(variable->type == DOUBLE) {
     sprintf(tmp, "popd %s", name);
+    doVarOp(30,name);
+  }
 
   if(variable->type == STRING){
-    sprintf(tmp, "pops %s", name);}
+    sprintf(tmp, "pops %s", name);
+    doVarOp(31,name);
+  }
 
   EmitLn(tmp);
 }
@@ -499,20 +518,30 @@ void StoreVar(char* name) {
 void StoreArray(char* name) {
   struct symbol_row * variable = findVariable(name);
   if(variable == NULL) error("variable not found");
-  if(variable->type == CHAR)
+  if(variable->type == CHAR) {
     sprintf(tmp, "popac %s", name);
+    doVarOp(33,name);
+  }
 
-  if(variable->type == INT)
+  if(variable->type == INT) {
     sprintf(tmp, "popai %s", name);
+    doVarOp(34,name);
+  }
 
-  if(variable->type == FLOAT)
+  if(variable->type == FLOAT) {
     sprintf(tmp, "popaf %s", name);
+    doVarOp(35,name);
+  }
 
-  if(variable->type == DOUBLE)
+  if(variable->type == DOUBLE) {
     sprintf(tmp, "popad %s", name);
+    doVarOp(36,name);
+  }
 
-  if(variable->type == STRING)
+  if(variable->type == STRING) {
     sprintf(tmp, "popas %s", name);
+    doVarOp(37,name);
+  }
 
   EmitLn(tmp);
 }
@@ -535,10 +564,13 @@ void DoAssignment() {
     Expression();
     if(isVarString(name)) {
       int strSize = obtainStringSize(name);
+      pushkiDirect(strSize);
       sprintf(tmp,"pushki %d",strSize);
       EmitLn(tmp);
+      doOneByteOp(61);
       EmitLn("MUL");
     }
+    doOneByteOp(67);
     EmitLn("popy");
     if(TOKEN != RIGHT_BRACKET) expected("closing array");
     next();
@@ -551,6 +583,7 @@ void DoAssignment() {
   else
     BoolExpression();
   if(isArray) {
+    doOneByteOp(66);
     EmitLn("movy");
     StoreArray(name);
   }
@@ -563,17 +596,22 @@ void PrintVar(char type, char *name) {
   switch(type) {
   case CHAR:
     sprintf(tmp, "prtc %s", name);
+    doVarOp(2,name);
     break;
   case INT:
+    doVarOp(3,name);
     sprintf(tmp, "prti %s", name);
     break;
   case FLOAT:
+    doVarOp(4,name);
     sprintf(tmp, "prtf %s", name);
     break;
   case DOUBLE:
+    doVarOp(5,name);
     sprintf(tmp, "prtd %s", name);
     break;
   case STRING:
+    doVarOp(6,name);
     sprintf(tmp, "prts %s", name);
   }
   EmitLn(tmp);
@@ -583,18 +621,23 @@ void PrintVar(char type, char *name) {
 void PrintArray(char type, char *name) {
   switch(type) {
   case CHAR:
+    doVarOp(7,name);
     sprintf(tmp, "prtac %s", name);
     break;
   case INT:
+    doVarOp(8,name);
     sprintf(tmp, "prtai %s", name);
     break;
   case FLOAT:
+    doVarOp(9,name);
     sprintf(tmp, "prtaf %s", name);
     break;
   case DOUBLE:
+    doVarOp(10,name);
     sprintf(tmp, "prtad %s", name);
     break;
   case STRING:
+    doVarOp(11,name);
     sprintf(tmp, "prtas %s", name);
   }
   EmitLn(tmp);
@@ -608,12 +651,14 @@ void Print(char* Name) {
     isArray = 1;
     next();
     Expression();
+    doOneByteOp(32);
     EmitLn("popx");
     if(TOKEN != RIGHT_BRACKET) expected("closing array");
     next();
   }
   if(isArray) PrintArray(variable->type, variable->name);
   else PrintVar(variable->type, variable->name);
+  doOneByteOp(1);
   EmitLn("prtcr");
 }
 
@@ -636,18 +681,23 @@ void DoPrint() {
 void ReadVar(char type, char *name) {
   switch(type) {
   case CHAR:
+    doVarOp(38,name);
     sprintf(tmp, "rdc %s", name);
     break;
   case INT:
+    doVarOp(39,name);
     sprintf(tmp, "rdi %s", name);
     break;
   case FLOAT:
+    doVarOp(40,name);
     sprintf(tmp, "rdf %s", name);
     break;
   case DOUBLE:
+    doVarOp(41,name);
     sprintf(tmp, "rdd %s", name);
     break;
   case STRING:
+    doVarOp(42,name);
     sprintf(tmp, "rds %s", name);
   }
   EmitLn(tmp);
@@ -656,18 +706,23 @@ void ReadVar(char type, char *name) {
 void ReadArray(char type, char *name) {
   switch(type) {
   case CHAR:
+    doVarOp(43,name);
     sprintf(tmp, "rdac %s", name);
     break;
   case INT:
+    doVarOp(44,name);
     sprintf(tmp, "rdai %s", name);
     break;
   case FLOAT:
+    doVarOp(45,name);
     sprintf(tmp, "rdaf %s", name);
     break;
   case DOUBLE:
+    doVarOp(46,name);
     sprintf(tmp, "rdad %s", name);
     break;
   case STRING:
+    doVarOp(47,name);
     sprintf(tmp, "rdas %s", name);
   }
   EmitLn(tmp);
@@ -682,6 +737,7 @@ void Read(char* Name) {
     isArray = 1;
     next();
     Expression();
+    doOneByteOp(32);
     EmitLn("popx");
     if(TOKEN != RIGHT_BRACKET) expected("closing array");
     next();
@@ -713,13 +769,16 @@ void DoIf() {
   if(TOKEN != LEFT_PAREN) expected("opening paretheses");
   next();
   BoolExpression();
+  pushki("0");
   EmitLn("pushki 0");
+  doOneByteOp(64);
   EmitLn("cmp");
   if(TOKEN != RIGHT_PAREN) expected("closing paretheses");
   next();
   char l1[BUFFER_SIZE];
   genLabel(l1);
   sprintf(tmp, "jmpeq %s", l1);
+  //TODO: do the jmpeq thing, idk how to do it properly
   EmitLn(tmp);
   CodeBlock();
   EmitLabel(l1);
@@ -733,12 +792,15 @@ void DoWhile() {
   if(TOKEN != LEFT_PAREN) expected("opening paretheses");
   next();
   BoolExpression();
+  pushki("0");
   EmitLn("pushki 0");
+  doOneByteOp(64);
   EmitLn("cmp");
   if(TOKEN != RIGHT_PAREN) expected("closing paretheses");
   next();
   char l1[BUFFER_SIZE];
   genLabel(l1);
+  //TODO: implement jumps here
   sprintf(tmp, "jmpeq %s", l1);
   EmitLn(tmp);
   CodeBlock();
@@ -765,8 +827,11 @@ void DoFor() {
 
   EmitLabel(l0);
   BoolExpression();
+  pushki("0");
   EmitLn("pushki 0");
+  doOneByteOp(64);
   EmitLn("cmp");
+  //TODO: do jumpeq here too, no idea how yet
   sprintf(tmp, "jmpeq %s", l3);
   EmitLn(tmp);
   sprintf(tmp, "jmp %s", l2);

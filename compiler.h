@@ -89,7 +89,6 @@ char tmp[BUFFER_SIZE];
 char outBuffer [1000];
 char outBufferCode[1000];
 char asmCode[1000][256];
-int index = 0;
 
 
 struct label_row {
