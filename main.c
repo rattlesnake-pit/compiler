@@ -343,7 +343,18 @@ void Expression() {
 }
 
 int getJumpType(char *jumpType) {
-  //TODO: compare jump types and return the correct value
+  if(!strcmp(jumpType,"jmpeq"))
+    return 49;
+  if(!strcmp(jumpType,"jmpne"))
+    return 50;
+    if(!strcmp(jumpType,"jmpgt"))
+    return 51;
+  if(!strcmp(jumpType,"jmpge"))
+    return 52;
+  if(!strcmp(jumpType,"jmplt"))
+    return 53;
+  if(!strcmp(jumpType,"jmple"))
+    return 54;
   return -1;
 }
 
@@ -352,20 +363,17 @@ void EmitComparison(char* jumpType) {
   char l2[BUFFER_SIZE];
   genLabel(l1);
   genLabel(l2);
-  int jtype = getJumpType(jumpType); //TODO: implement this to get a diff number depending on the jumptype
+  int jtype = getJumpType(jumpType);
   doOneByteOp(jtype);
-  //TODO: honestly not sure how to implement doJump properly
   doJump(l1);
   sprintf(tmp, "%s %s", jumpType, l1);
   EmitLn(tmp);
   pushki("0");
   EmitLn("pushki 0");
-  //  TODO: still don't know how to implement jump
   doOneByteOp(48);
-  doJump(l2);//TODO: implement this later
+  doJump(l2);
   sprintf(tmp, "jmp %s", l2);
   EmitLn(tmp);
-  //idk what emit label does exactly
   EmitLabel(l1);
   pushki("1");
   EmitLn("pushki 1");
@@ -432,12 +440,14 @@ void NotIt() {
   EmitLn("pushki 0");
   doOneByteOp(64);
   EmitLn("cmp");
-  //TODO: jmpeq code gen goes here, idk how to do that though
+  doOneByteOp(49);
+  doJump(l1);
   sprintf(tmp, "jmpeq %s", l1);
   EmitLn(tmp);
   pushki("0");
   EmitLn("pushki 0");
-  //TODO: code gen of jump goes here idk how to do that
+  doOneByteOp(48);
+  doJump(l2);
   sprintf(tmp, "jmp %s", l2);
   EmitLn(tmp);
   EmitLabel(l1);
@@ -777,8 +787,9 @@ void DoIf() {
   next();
   char l1[BUFFER_SIZE];
   genLabel(l1);
+  doOneByteOp(49);
+  doJump(l1);
   sprintf(tmp, "jmpeq %s", l1);
-  //TODO: do the jmpeq thing, idk how to do it properly
   EmitLn(tmp);
   CodeBlock();
   EmitLabel(l1);
@@ -800,10 +811,13 @@ void DoWhile() {
   next();
   char l1[BUFFER_SIZE];
   genLabel(l1);
-  //TODO: implement jumps here
+  doOneByteOp(49);
+  doJump(l1);
   sprintf(tmp, "jmpeq %s", l1);
   EmitLn(tmp);
   CodeBlock();
+  doOneByteOp(48);
+  doJump(l0);
   sprintf(tmp, "jmp %s", l0);
   EmitLn(tmp);
   EmitLabel(l1);
@@ -831,21 +845,28 @@ void DoFor() {
   EmitLn("pushki 0");
   doOneByteOp(64);
   EmitLn("cmp");
-  //TODO: do jumpeq here too, no idea how yet
+  doOneByteOp(49);
+  doJump(l3);
   sprintf(tmp, "jmpeq %s", l3);
   EmitLn(tmp);
+  doOneByteOp(48);
+  doJump(l2);
   sprintf(tmp, "jmp %s", l2);
   EmitLn(tmp);
   if(TOKEN != SEMI_COLON) expected("semicolon");
   next();
   EmitLabel(l1);
   if(TOKEN == NAME) DoAssignment();
+  doOneByteOp(48);
+  doJump(l0);
   sprintf(tmp, "jmp %s", l0);
   EmitLn(tmp);
   if(TOKEN != RIGHT_PAREN) expected("closing paretheses");
   next();
   EmitLabel(l2);
   CodeBlock();
+  doOneByteOp(48);
+  doJump(l1);
   sprintf(tmp, "jmp %s", l1);
   EmitLn(tmp);
   EmitLabel(l3);
@@ -908,5 +929,7 @@ int main() {
 #endif
   init();
   Language();
+  resolvePendingLabels();
+  //emitOutput(); this will be conditional to a certain flag
   return 0;
 }

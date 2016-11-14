@@ -29,4 +29,8 @@ void pushks(char *value);
 void addKint(char *value);
 void addKfloat(char *value);
 void addKstring(char *value);
+void insertLabel(char *value);
+void resolvePendingLabels();
+void insertPendingLabel(char *label);
+int findLabelAddress(char* label);
 #endif

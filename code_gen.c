@@ -8,6 +8,9 @@ int PC = 0;
 int DS = 0;
 int ST_END = 0;
 int LabelNumber = 0;
+int st_end = 0;
+int lt_end = 0;
+int pending_end = 0;
 
 
 struct symbol_row symbol_table[100];
@@ -88,29 +91,79 @@ void addKstring(char *value){
     writeString(value);
 }
 
+void resolvePendingLabels() {
+  for(int i = 0; i < pending_end; i++) {
+    int address = findLabelAddress(pending_label_table[i].name);
+    if(address == NOT_FOUND) {
+      sprintf(tmp, "LABEL '%s' NOT FOUND", pending_label_table[i].name);
+      error(tmp);
+    }
+    int pc = pending_label_table[i].address;
+    fprintf(stderr, "resolved label %s with pc: %d to address %d\n",
+        pending_label_table[i].name, pc, address);
+    outBuffer[pc] = address >> 8;
+    outBuffer[pc+1] = address;
+  }
+}
+
+void insertPendingLabel(char *label) {
+  struct label_row row;
+  row.address = PC;
+  strcpy(row.name, label);
+  pending_label_table[pending_end] = row;
+  pending_end++;
+}
+
+int findLabelAddress(char* label) {
+  for(int i = 0; i < lt_end; i++) {
+    if(strcmp(label_table[i].name, label) == 0) {
+      return label_table[i].address;
+    }
+  }
+  return NOT_FOUND;
+}
+
 void doJump(char *label) {
-    //TODO: implement dojump
+    int address = findLabelAddress(label);
+    if(address == NOT_FOUND) {
+      insertPendingLabel(label);
+      writeByte(0xFF);
+      writeByte(0xFF);
+    }
+    else {
+      writeByte(address>>8);
+      writeByte(address);
+    }
 }
 
 void pushkiDirect(int value) {
-    doOneByteOp(23);//replace with value of pushki
+    doOneByteOp(23);
     writeInt(value);
 }
 
 void pushki(char* value) {
-    doOneByteOp(23);//replace with value of pushki
+    doOneByteOp(23);
     addKint(value);
 }
 
 void pushkf(char* value) {
-    doOneByteOp(24);//replace with value of pushkf
+    doOneByteOp(24);
     addKfloat(value);
 }
 
 void pushks(char* value) {
-    doOneByteOp(26);//replace with value of pushks
+    doOneByteOp(26);
     addKstring(value);
 }
+
+void insertLabel(char *value) {
+  struct label_row row;
+  strcpy(row.name, value);
+  row.address = PC;
+  label_table[lt_end] = row;
+  lt_end++;
+}
+
 //anything below this is old
 
 void insertSymbol(char type, int type_sz, char* name) {
@@ -145,6 +198,7 @@ struct symbol_row * findVariable(char *value){
 
 void genLabel(char *label) {
   sprintf(label, "L%d", LabelNumber++);
+  insertLabel(label);
 }
 
 void EmitLabel(char *label) {
