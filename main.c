@@ -111,6 +111,7 @@ void DoVariableDeclaration(enum TOKENS type) {
     case DOUBLE_TYPE:
       EmitDeclaration("defd", VALUE);
       insertSymbol(DOUBLE, DOUBLE_SZ, VALUE);
+      break;
     case STRING_TYPE:
       stringDeclaration("defs", VALUE);
       break;
@@ -320,7 +321,7 @@ void AssignConstant() {
 
 void stringExpression() {
   if(TOKEN == QUOTE) {
-    next();
+    nextString();
     AssignConstant();//this should do pushks
     next();
     matchString("\"");
@@ -662,6 +663,13 @@ void Print(char* Name) {
     isArray = 1;
     next();
     Expression();
+    if(variable->type == STRING) {
+      pushkiDirect(variable->stringSize);
+      sprintf(tmp,"pushki %d",variable->stringSize);
+      EmitLn(tmp);
+      doOneByteOp(61);
+      EmitLn("MUL");
+    }
     doOneByteOp(32);
     EmitLn("popx");
     if(TOKEN != RIGHT_BRACKET) expected("closing array");
@@ -748,6 +756,13 @@ void Read(char* Name) {
     isArray = 1;
     next();
     Expression();
+    if(variable->type == STRING) {
+      pushkiDirect(variable->stringSize);
+      sprintf(tmp,"pushki %d",variable->stringSize);
+      EmitLn(tmp);
+      doOneByteOp(61);
+      EmitLn("MUL");
+    }
     doOneByteOp(32);
     EmitLn("popx");
     if(TOKEN != RIGHT_BRACKET) expected("closing array");

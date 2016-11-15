@@ -43,12 +43,6 @@ char* str_tokens[] = {
 };
 
 int tokens_size = sizeof str_tokens / sizeof *str_tokens;
-/*
-  anything after this is new, it needs to be added to compiler.h
-*/
-
-
-//anything below this is old
 
 void scan() {
   for(int i = 0; i < tokens_size; i++) {
