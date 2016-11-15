@@ -164,6 +164,35 @@ void insertLabel(char *value) {
   lt_end++;
 }
 
+void emitId() {
+  printf("(C)CHUNKUN");
+}
+
+void emitDS() {
+  printf("%c%c",DS>>8,DS);
+}
+
+void emitCS() {
+  printf("%c%c",PC>>8,PC);
+}
+
+void emitCode() {
+  for(int i = 0; i < PC; i++) {
+    printf("%c", outBuffer[i]);
+  }
+}
+
+void emitHeader() {
+  emitId();
+  emitDS();
+  emitCS();
+}
+
+void emitOutput() {
+  emitHeader();
+  emitCode();
+}
+
 //anything below this is old
 
 void insertSymbol(char type, int type_sz, char* name) {

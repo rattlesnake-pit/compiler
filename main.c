@@ -15,7 +15,8 @@ void Relation();
 void BoolExpression();
 
 void EmitLn(char* s) {
-  printf("%s\n", s);
+  if(type_out ==  ASM)
+    printf("%s\n", s);
 }
 
 void EmitDeclaration(char* def, char* name) {
@@ -895,7 +896,6 @@ void Statement() {
     DoFor();
   }
   else {
-    printf("rip %s\n",VALUE);
     error("unrecognized statement");
   }
 }
@@ -923,13 +923,19 @@ void Language() {
   CodeBlock();
 }
 
-int main() {
+int main(int argc, char *argv[]) {
 #ifdef _WIN32
   _setmode( _fileno(stdout), _O_BINARY);
 #endif
+  if(argc == 2)
+    if(!strcmp(argv[1],"asm"))
+      type_out = ASM;
+    else
+      type_out = BINARY;
   init();
   Language();
   resolvePendingLabels();
-  //emitOutput(); this will be conditional to a certain flag
+  if(type_out == BINARY)
+    emitOutput();
   return 0;
 }

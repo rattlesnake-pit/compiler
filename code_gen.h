@@ -33,4 +33,5 @@ void insertLabel(char *value);
 void resolvePendingLabels();
 void insertPendingLabel(char *label);
 int findLabelAddress(char* label);
+void emitOutput();
 #endif
