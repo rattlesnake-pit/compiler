@@ -99,8 +99,6 @@ void resolvePendingLabels() {
       error(tmp);
     }
     int pc = pending_label_table[i].address;
-    fprintf(stderr, "resolved label %s with pc: %d to address %d\n",
-        pending_label_table[i].name, pc, address);
     outBuffer[pc] = address >> 8;
     outBuffer[pc+1] = address;
   }
@@ -227,10 +225,10 @@ struct symbol_row * findVariable(char *value){
 
 void genLabel(char *label) {
   sprintf(label, "L%d", LabelNumber++);
-  insertLabel(label);
 }
 
 void EmitLabel(char *label) {
   sprintf(tmp, "%s:", label);
+  insertLabel(label);
   EmitLn(tmp);
 }
