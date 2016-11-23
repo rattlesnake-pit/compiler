@@ -16,6 +16,11 @@
 #define FLOAT_SZ 4
 #define DOUBLE_SZ 8
 
+#define ASM 10
+#define BINARY 11
+
+int type_out;
+
 enum TOKENS {
   CHAR_TYPE,    // 0
   INT_TYPE,     // 1
@@ -86,7 +91,7 @@ enum TOKENS TOKEN;
 char look;
 char VALUE[BUFFER_SIZE];
 char tmp[BUFFER_SIZE];
-char outBuffer [1000];
+char outBuffer[1000];
 
 
 struct label_row {
