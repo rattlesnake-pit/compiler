@@ -30,7 +30,6 @@ void writeAddress(int a) {
 
 void doOneByteOp(unsigned char token) {
   writeByte(token);
-  next();
 }
 
 int findVariableAddress(char *value){
@@ -53,7 +52,8 @@ void doVarOp(int token, char *value){
     }
 }
 
-void writeInt(int value){
+//maybve change this to unsigned char
+void writeInt(unsigned char value){
     for(int i = 24; i >= 0; i -= 8){
         writeByte(value >> i);
     }

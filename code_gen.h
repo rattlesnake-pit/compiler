@@ -17,7 +17,7 @@ void writeAddress(int a);
 void doOneByteOp(unsigned char token);
 void doVarOp(int token, char *value);
 int findVariableAddress(char *value);
-void writeInt(int value);
+void writeInt(unsigned char value);
 void writeFloat(float value);
 void writeSize(char *value);
 void doJump(char *label);

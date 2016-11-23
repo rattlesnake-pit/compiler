@@ -947,6 +947,8 @@ int main(int argc, char *argv[]) {
       type_out = ASM;
     else
       type_out = BINARY;
+  else
+    type_out = BINARY;
   init();
   Language();
   resolvePendingLabels();
