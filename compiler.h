@@ -91,7 +91,7 @@ enum TOKENS TOKEN;
 char look;
 char VALUE[BUFFER_SIZE];
 char tmp[BUFFER_SIZE];
-char outBuffer[1000];
+unsigned char outBuffer[1000];
 
 
 struct label_row {

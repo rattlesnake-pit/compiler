@@ -10,6 +10,7 @@
 #endif
 
 void Expression();
+void printLn();
 void CodeBlock();
 void Relation();
 void BoolExpression();
@@ -142,9 +143,13 @@ void LoadVar(char type, char* name) {
     sprintf(tmp, "pushc %s", name);
     break;
   case INT:
-    doVarOp(13,name);
-    sprintf(tmp, "pushi %s", name);
-    break;
+    {
+      int address = findVariableAddress(name);
+      writeByte(0xa1);
+      writeInt(0x8049000 + address);
+      sprintf(tmp, "pushi %s", name);
+      break;
+    }
   case FLOAT:
     doVarOp(14,name);
     sprintf(tmp, "pushf %s", name);
@@ -166,8 +171,14 @@ void LoadArray(char type, char* name) {
     sprintf(tmp, "pushac %s", name);
     break;
   case INT:
-    doVarOp(18,name);
-    sprintf(tmp, "pushai %s", name);
+    //imul ebx, 4
+    writeByte(0x6b);
+    writeByte(0xdb);
+    writeByte(0x04);
+    //mov eax, [ebx + dir]
+    writeByte(0x8b);
+    writeByte(0x83);
+    writeInt(0x8049000 + findVariableAddress(name));
     break;
   case FLOAT:
     doVarOp(19,name);
@@ -185,28 +196,90 @@ void LoadArray(char type, char* name) {
 
 }
 
-void LoadString(char *Name) {
-  struct symbol_row * variable = findVariable(Name);
+
+void DoLoadString(struct symbol_row * variable) {
+  /*
+   *  add ebx,0x8049000
+   *  add ecx,0x8049000
+   *  mov al,[ebx]
+   *  mov [ecx],al
+   *  cmp al,0x0
+   *  jz 0x18
+   *  inc ecx
+   *  inc ebx
+   *  jmp short 0xc
+   *
+   */
+  writeByte(0x81);
+  writeByte(0xc3);
+  writeByte(0x00);
+  writeByte(0x90);
+  writeByte(0x04);
+  writeByte(0x08);
+
+  writeByte(0x81);
+  writeByte(0xc1);
+  writeByte(0x00);
+  writeByte(0x90);
+  writeByte(0x04);
+  writeByte(0x08);
+
+  writeByte(0x8a);
+  writeByte(0x03);
+
+  writeByte(0x88);
+  writeByte(0x01);
+
+  writeByte(0x3c);
+  writeByte(0x00);
+
+  writeByte(0x74);
+  writeByte(0x04);
+
+  writeByte(0x41);
+
+  writeByte(0x43);
+
+  writeByte(0xeb);
+  writeByte(0xf4);
+} 
+void LoadString(char *left, char *right) {
+  struct symbol_row * variable = findVariable(right);
   if(variable == NULL) error("Undefined variable");
+  struct symbol_row * leftVar = findVariable(left);
   int isArray = 0;
   next();
+  //xor ebx, ebx
+  writeByte(0x31);
+  writeByte(0xdb);
   if(TOKEN == LEFT_BRACKET) {
     isArray = 1;
     next();
     Expression();
+    // mov ebx, eax
+    writeByte(0x89);
+    writeByte(0xc3);
+
     int stringSize = variable->stringSize;
-    pushkiDirect(stringSize);
-    sprintf(tmp,"pushki %d",stringSize);
-    EmitLn(tmp);
-    doOneByteOp(61);
-    EmitLn("MUL");
-    doOneByteOp(32);
-    EmitLn("popx");
+
+    //imul ebx, stringsize
+    writeByte(0x6b);
+    writeByte(0xdb);
+    writeByte(stringSize);
     if(TOKEN != RIGHT_BRACKET) expected("closing array bracket");
     next();
   }
-  if(isArray)LoadArray(variable->type, variable->name);
-  else LoadVar(variable->type, variable->name);
+  //add ebx, dir
+  //add ecx, dir
+  writeByte(0x83);
+  writeByte(0xc3);
+  writeByte(variable->start);
+  writeByte(0x83);
+  writeByte(0xc1);
+  writeByte(leftVar->start);
+  DoLoadString(variable);
+  //if(isArray)LoadArray(variable->type, variable->name);
+  //else LoadVar(variable->type, variable->name);
 }
 
 void Load(char *Name) {
@@ -218,8 +291,9 @@ void Load(char *Name) {
     isArray = 1;
     next();
     Expression();
-    doOneByteOp(32);
-    EmitLn("popx");
+    // mov ebx, eax
+    writeByte(0x89);
+    writeByte(0xc3);
     if(TOKEN != RIGHT_BRACKET) expected("closing array bracket");
     next();
   }
@@ -266,20 +340,42 @@ void Factor() {
 void Multiply() {
   next();
   Factor();
-  doOneByteOp(61);
+  writeByte(0x0f);
+  writeByte(0xaf);
+  writeByte(0x04);
+  writeByte(0x24);
+  writeByte(0x83);
+  writeByte(0xc4);
+  writeByte(0x04);
   EmitLn("mul");
 }
 
 void Divide() {
   next();
   Factor();
-  doOneByteOp(62);
+  writeByte(0x89);
+  writeByte(0xc2);
+  writeByte(0x58);
+  writeByte(0x99);
+  writeByte(0xf7);
+  writeByte(0xfa);
   EmitLn("div");
+}
+
+void Push() {
+  writeByte(0x50);
+}
+
+void Pop() {
+  writeByte(0x83);
+  writeByte(0xc4);
+  writeByte(0x04);
 }
 
 void MulExpression() {
   Factor();
   while(TOKEN == MUL || TOKEN == DIV) {
+    Push();
     switch(TOKEN) {
       case MUL: Multiply(); break;
       case DIV: Divide(); break;
@@ -290,14 +386,26 @@ void MulExpression() {
 void Add() {
   next();
   MulExpression();
-  doOneByteOp(59);
+  writeByte(0x03);
+  writeByte(0x04);
+  writeByte(0x24);
+  writeByte(0x83);
+  writeByte(0xc4);
+  writeByte(0x04);
   EmitLn("add");
 }
 
 void Substract() {
   next();
   MulExpression();
-  doOneByteOp(60);
+  writeByte(0x2b);
+  writeByte(0x04);
+  writeByte(0x24);
+  writeByte(0xf7);
+  writeByte(0xd8);
+  writeByte(0x83);
+  writeByte(0xc4);
+  writeByte(0x04);
   EmitLn("sub");
 }
 
@@ -306,30 +414,45 @@ int isVarString(char *name) {
   if(variable == NULL) error("Undefined variable");
   if(variable->type == STRING)
     return 1;
-  else
-    return 0;
+  return 0;
 }
 
-void AssignConstant() {
-  if(strlen(VALUE) > 256){expected("string is too long");}
-  char temp[256];
-  strcpy(temp,VALUE);
-  pushks(temp);
+void AssignConstant(char *name) {
+  int sz = strlen(VALUE);
+  if(sz > 256){expected("string is too long");}
+  //pushks(temp);
+  struct symbol_row * variable = findVariable(name);
+  int address = variable->start;
+  int totalSize = variable->stringSize;
+  for(int i = 0; i < sz; i++) {
+    //mov byte dword [ecx + dir], val
+    writeByte(0xc6);
+    writeByte(0x81);
+    writeInt(0x8049000 + address + i);
+    writeByte(VALUE[i]);
+  }
+  for(int i = sz; i < totalSize; i++) {
+    writeByte(0xc6);
+    writeByte(0x81);
+    writeInt(0x8049000 + address + i);
+    writeByte(0x00);
+  }
+
   sprintf(tmp,"pushks \"%s\"", VALUE);
   EmitLn(tmp);
 }
 
-void stringExpression() {
+void stringExpression(char *name) {
   if(TOKEN == QUOTE) {
     nextString();
-    AssignConstant();//this should do pushks
+    AssignConstant(name);//this should do pushks
     next();
     matchString("\"");
     next();
   }
   else {
     if(TOKEN == NAME) {
-      LoadString(VALUE);
+      LoadString(name, VALUE);
     }
   }
 }
@@ -337,6 +460,7 @@ void stringExpression() {
 void Expression() {
   MulExpression();
   while(TOKEN == ADD || TOKEN == SUB) {
+    Push();
     switch(TOKEN) {
       case ADD : Add(); break;
       case SUB : Substract(); break;
@@ -360,68 +484,81 @@ int getJumpType(char *jumpType) {
   return -1;
 }
 
-void EmitComparison(char* jumpType) {
-  char l1[BUFFER_SIZE];
-  char l2[BUFFER_SIZE];
-  genLabel(l1);
-  genLabel(l2);
-  int jtype = getJumpType(jumpType);
-  doOneByteOp(jtype);
-  doJump(l1);
-  sprintf(tmp, "%s %s", jumpType, l1);
-  EmitLn(tmp);
-  pushki("0");
-  EmitLn("pushki 0");
-  doOneByteOp(48);
-  doJump(l2);
-  sprintf(tmp, "jmp %s", l2);
-  EmitLn(tmp);
-  EmitLabel(l1);
-  pushki("1");
-  EmitLn("pushki 1");
-  EmitLabel(l2);
-}
 
 void Compare() {
   next();
   Expression();
-  doOneByteOp(64);
+  writeByte(0x3b);
+  writeByte(0x04);
+  writeByte(0x24);
   EmitLn("cmp");
 }
 
 void Equals() {
   Compare();
-  EmitComparison("jmpeq");
+  writeByte(0x0f);
+  writeByte(0x94);
+  writeByte(0xc0);
+  writeByte(0x0f);
+  writeByte(0xbe);
+  writeByte(0xc0);
 }
 
 void NotEqual() {
   Compare();
-  EmitComparison("jmpne");
+  writeByte(0x0f);
+  writeByte(0x95);
+  writeByte(0xc0);
+  writeByte(0x0f);
+  writeByte(0xbe);
+  writeByte(0xc0);
 }
 
 void Less() {
   Compare();
-  EmitComparison("jmplt");
+  writeByte(0x0f);
+  writeByte(0x9f);
+  writeByte(0xc0);
+  writeByte(0x0f);
+  writeByte(0xbe);
+  writeByte(0xc0);
+  
 }
 
 void LessEqual() {
   Compare();
-  EmitComparison("jmple");
+  writeByte(0x0f);
+  writeByte(0x9d);
+  writeByte(0xc0);
+  writeByte(0x0f);
+  writeByte(0xbe);
+  writeByte(0xc0);
 }
 
 void Greater() {
   Compare();
-  EmitComparison("jmpgt");
+  writeByte(0x0f);
+  writeByte(0x9c);
+  writeByte(0xc0);
+  writeByte(0x0f);
+  writeByte(0xbe);
+  writeByte(0xc0);
 }
 
 void GreaterEqual() {
   Compare();
-  EmitComparison("jmpge");
+  writeByte(0x0f);
+  writeByte(0x9e);
+  writeByte(0xc0);
+  writeByte(0x0f);
+  writeByte(0xbe);
+  writeByte(0xc0);
 }
 
 void Relation() {
   Expression();
   if(isRelop(TOKEN)) {
+    Push();
     switch(TOKEN) {
       case EQUAL: Equals(); break;
       case LESS: Less(); break;
@@ -430,32 +567,13 @@ void Relation() {
       case GREATER_EQUAL: GreaterEqual(); break;
       case NOT_EQUAL: NotEqual(); break;
     }
+    Pop();
   }
 }
 
 void NotIt() {
-  char l1[BUFFER_SIZE];
-  char l2[BUFFER_SIZE];
-  genLabel(l1);
-  genLabel(l2);
-  pushki("0");
-  EmitLn("pushki 0");
-  doOneByteOp(64);
-  EmitLn("cmp");
-  doOneByteOp(49);
-  doJump(l1);
-  sprintf(tmp, "jmpeq %s", l1);
-  EmitLn(tmp);
-  pushki("0");
-  EmitLn("pushki 0");
-  doOneByteOp(48);
-  doJump(l2);
-  sprintf(tmp, "jmp %s", l2);
-  EmitLn(tmp);
-  EmitLabel(l1);
-  pushki("1");
-  EmitLn("pushki 1");
-  EmitLabel(l2);
+  writeByte(0xf7);
+  writeByte(0xd0);
 }
 
 void NotFactor() {
@@ -468,13 +586,17 @@ void NotFactor() {
 }
 
 void DoAnd() {
-  doOneByteOp(61);
+  writeByte(0x23);
+  writeByte(0x04);
+  writeByte(0x24);
+  Pop();
   EmitLn("mul");
 }
 
 void BoolTerm() {
   NotFactor();
   while(TOKEN == AND) {
+    Push();
     next();
     NotFactor();
     DoAnd();
@@ -482,13 +604,17 @@ void BoolTerm() {
 }
 
 void DoOr() {
-  doOneByteOp(59);
+  writeByte(0x0b);
+  writeByte(0x04);
+  writeByte(0x24);
+  Pop();
   EmitLn("add");
 }
 
 void BoolExpression() {
   BoolTerm();
   while(TOKEN == OR) {
+    Push();
     next();
     BoolTerm();
     DoOr();
@@ -506,7 +632,8 @@ void StoreVar(char* name) {
 
   if(variable->type == INT) {
     sprintf(tmp, "popi %s", name);
-    doVarOp(28,name);
+    writeByte(0xa3);
+    writeInt(0x8049000 + variable->start);
   }
 
   if(variable->type == FLOAT) {
@@ -536,8 +663,17 @@ void StoreArray(char* name) {
   }
 
   if(variable->type == INT) {
-    sprintf(tmp, "popai %s", name);
-    doVarOp(34,name);
+    //mov ebx, ecx
+    writeByte(0x89);
+    writeByte(0xcb);
+    //imul ebx, 4
+    writeByte(0x6b);
+    writeByte(0xdb);
+    writeByte(0x04);
+    // mov [ebx + dir], eax
+    writeByte(0x89);
+    writeByte(0x83);
+    writeInt(0x8049000 + variable->start);
   }
 
   if(variable->type == FLOAT) {
@@ -570,37 +706,41 @@ void DoAssignment() {
   strcpy(name, VALUE);
   next();
   int isArray = 0;
+  //xor ecx, ecx
+  writeByte(0x31);
+  writeByte(0xc9);
   if(TOKEN == LEFT_BRACKET) {
     isArray = 1;
     next();
     Expression();
+    // mov ecx, eax
+    writeByte(0x89);
+    writeByte(0xc1);
+
     if(isVarString(name)) {
       int strSize = obtainStringSize(name);
-      pushkiDirect(strSize);
-      sprintf(tmp,"pushki %d",strSize);
-      EmitLn(tmp);
-      doOneByteOp(61);
-      EmitLn("MUL");
+      //imul ecx, strsize
+      writeByte(0x6b);
+      writeByte(0xc9);
+      writeByte(strSize);
     }
-    doOneByteOp(67);
-    EmitLn("popy");
     if(TOKEN != RIGHT_BRACKET) expected("closing array");
     next();
   }
   matchString("=");
   next();
   if(isVarString(name)){
-    stringExpression();
-  }
-  else
-    BoolExpression();
-  if(isArray) {
-    doOneByteOp(66);
-    EmitLn("movy");
-    StoreArray(name);
+    stringExpression(name);
   }
   else {
-    StoreVar(name);
+    BoolExpression();
+    if(isArray) {
+      StoreArray(name);
+    }
+    else {
+      StoreVar(name);
+    }
+
   }
 }
 
@@ -610,9 +750,50 @@ void PrintVar(char type, char *name) {
     sprintf(tmp, "prtc %s", name);
     doVarOp(2,name);
     break;
-  case INT:
-    doVarOp(3,name);
-    sprintf(tmp, "prti %s", name);
+  case INT:{
+    int address = findVariableAddress(name);
+    //mov
+    writeByte(0xa1);
+    writeInt(0x8049000 + address);
+    //call
+    writeByte(0xbb);
+    writeByte(0x78);
+    writeByte(0x80);
+    writeByte(0x04);
+    writeByte(0x08);
+    writeByte(0xff);
+    writeByte(0xd3);
+    //print
+    writeByte(0xb0);
+    writeByte(0x04);
+    writeByte(0xb3);
+    writeByte(0x01);
+    writeByte(0xb9);
+    writeByte(0x00);
+    writeByte(0x90);
+    writeByte(0x04);
+    writeByte(0x08);
+    writeByte(0x8a);
+    writeByte(0x15);
+    writeByte(0x09);
+    writeByte(0x90);
+    writeByte(0x04);
+    writeByte(0x08);
+    writeByte(0xcd);
+    writeByte(0x80);
+    // reset ptr
+    writeByte(0xc7);
+    writeByte(0x05);
+    writeByte(0x09);
+    writeByte(0x90);
+    writeByte(0x04);
+    writeByte(0x08);
+    writeByte(0x00);
+    writeByte(0x00);
+    writeByte(0x00);
+    writeByte(0x00);
+
+    sprintf(tmp, "prti %s", name);}
     break;
   case FLOAT:
     doVarOp(4,name);
@@ -622,9 +803,22 @@ void PrintVar(char type, char *name) {
     doVarOp(5,name);
     sprintf(tmp, "prtd %s", name);
     break;
-  case STRING:
-    doVarOp(6,name);
+  case STRING: {
+    //doVarOp(6,name);
     sprintf(tmp, "prts %s", name);
+    struct symbol_row *variable = findVariable(name);
+    //print
+    writeByte(0xb0);
+    writeByte(0x04);
+    writeByte(0xb3);
+    writeByte(0x01);
+    writeByte(0xb9);
+    writeInt(0x8049000 + variable->start);
+    writeByte(0xb2);
+    writeByte(variable->stringSize);
+    writeByte(0xcd);
+    writeByte(0x80);
+   }
   }
   EmitLn(tmp);
 
@@ -636,10 +830,53 @@ void PrintArray(char type, char *name) {
     doVarOp(7,name);
     sprintf(tmp, "prtac %s", name);
     break;
-  case INT:
-    doVarOp(8,name);
-    sprintf(tmp, "prtai %s", name);
-    break;
+  case INT: {
+    // imul ebx, 4
+    writeByte(0x6b);
+    writeByte(0xdb);
+    writeByte(0x04);
+    //mov eax, [ebx + dir]
+    writeByte(0x8b);
+    writeByte(0x83);
+    writeInt(0x8049000 + findVariableAddress(name));
+    //call
+    writeByte(0xbb);
+    writeByte(0x78);
+    writeByte(0x80);
+    writeByte(0x04);
+    writeByte(0x08);
+    writeByte(0xff);
+    writeByte(0xd3);
+    //print
+    writeByte(0xb0);
+    writeByte(0x04);
+    writeByte(0xb3);
+    writeByte(0x01);
+    writeByte(0xb9);
+    writeByte(0x00);
+    writeByte(0x90);
+    writeByte(0x04);
+    writeByte(0x08);
+    writeByte(0x8a);
+    writeByte(0x15);
+    writeByte(0x09);
+    writeByte(0x90);
+    writeByte(0x04);
+    writeByte(0x08);
+    writeByte(0xcd);
+    writeByte(0x80);
+    // reset ptr
+    writeByte(0xc7);
+    writeByte(0x05);
+    writeByte(0x09);
+    writeByte(0x90);
+    writeByte(0x04);
+    writeByte(0x08);
+    writeByte(0x00);
+    writeByte(0x00);
+    writeByte(0x00);
+    writeByte(0x00);
+    break;}
   case FLOAT:
     doVarOp(9,name);
     sprintf(tmp, "prtaf %s", name);
@@ -648,9 +885,46 @@ void PrintArray(char type, char *name) {
     doVarOp(10,name);
     sprintf(tmp, "prtad %s", name);
     break;
-  case STRING:
-    doVarOp(11,name);
+  case STRING:{
     sprintf(tmp, "prtas %s", name);
+    struct symbol_row *variable = findVariable(name);
+    /*
+     * add ebx, 0x8049000
+     * add ebx, variable start (only 8 bits)
+     * mov ecx, ebx
+     * mov al, 0x4
+     * mov bl, 0x1
+     * mov dl, stringSize
+     * int 0x80
+     */
+    writeByte(0x81);
+    writeByte(0xc3);
+    writeByte(0x00);
+    writeByte(0x90);
+    writeByte(0x04);
+    writeByte(0x08);
+
+    writeByte(0x83);
+    writeByte(0xc3);
+    writeByte(variable->start);
+
+    writeByte(0x89);
+    writeByte(0xd9);
+
+    writeByte(0xb0);
+    writeByte(0x04);
+
+    writeByte(0xbb);
+    writeByte(0x01);
+    writeByte(0x00);
+    writeByte(0x00);
+    writeByte(0x00);
+
+    writeByte(0xb2);
+    writeByte(variable->stringSize);
+    writeByte(0xcd);
+    writeByte(0x80);
+    break; }
   }
   EmitLn(tmp);
 }
@@ -663,21 +937,21 @@ void Print(char* Name) {
     isArray = 1;
     next();
     Expression();
+    // mov ebx, eax
+    writeByte(0x89);
+    writeByte(0xc3);
     if(variable->type == STRING) {
-      pushkiDirect(variable->stringSize);
-      sprintf(tmp,"pushki %d",variable->stringSize);
-      EmitLn(tmp);
-      doOneByteOp(61);
-      EmitLn("MUL");
+      //imul ebx, strsize
+      writeByte(0x6b);
+      writeByte(0xdb);
+      writeByte(variable->stringSize);
     }
-    doOneByteOp(32);
-    EmitLn("popx");
     if(TOKEN != RIGHT_BRACKET) expected("closing array");
     next();
   }
   if(isArray) PrintArray(variable->type, variable->name);
   else PrintVar(variable->type, variable->name);
-  doOneByteOp(1);
+  //doOneByteOp(1);
   EmitLn("prtcr");
 }
 
@@ -795,47 +1069,39 @@ void DoIf() {
   if(TOKEN != LEFT_PAREN) expected("opening paretheses");
   next();
   BoolExpression();
-  pushki("0");
-  EmitLn("pushki 0");
-  doOneByteOp(64);
-  EmitLn("cmp");
   if(TOKEN != RIGHT_PAREN) expected("closing paretheses");
   next();
   char l1[BUFFER_SIZE];
+  char l2[BUFFER_SIZE];
   genLabel(l1);
-  doOneByteOp(49);
-  doJump(l1);
-  sprintf(tmp, "jmpeq %s", l1);
-  EmitLn(tmp);
+  strcpy(l2,l1);
+  doJumpFalse(l1);
   CodeBlock();
-  EmitLabel(l1);
+  if(TOKEN == ELSE) {
+    next();
+    genLabel(l2);
+    doJump(l2);
+    EmitLabel(l1);
+    CodeBlock();
+  }
+  EmitLabel(l2);
 }
 
 void DoWhile() {
   char l0[BUFFER_SIZE];
-  genLabel(l0);
-  EmitLabel(l0);
   next();
   if(TOKEN != LEFT_PAREN) expected("opening paretheses");
   next();
+  genLabel(l0);
+  EmitLabel(l0);
   BoolExpression();
-  pushki("0");
-  EmitLn("pushki 0");
-  doOneByteOp(64);
-  EmitLn("cmp");
   if(TOKEN != RIGHT_PAREN) expected("closing paretheses");
   next();
   char l1[BUFFER_SIZE];
   genLabel(l1);
-  doOneByteOp(49);
-  doJump(l1);
-  sprintf(tmp, "jmpeq %s", l1);
-  EmitLn(tmp);
+  doJumpFalse(l1);
   CodeBlock();
-  doOneByteOp(48);
   doJump(l0);
-  sprintf(tmp, "jmp %s", l0);
-  EmitLn(tmp);
   EmitLabel(l1);
 }
 
@@ -857,34 +1123,18 @@ void DoFor() {
 
   EmitLabel(l0);
   BoolExpression();
-  pushki("0");
-  EmitLn("pushki 0");
-  doOneByteOp(64);
-  EmitLn("cmp");
-  doOneByteOp(49);
-  doJump(l3);
-  sprintf(tmp, "jmpeq %s", l3);
-  EmitLn(tmp);
-  doOneByteOp(48);
+  doJumpFalse(l3);
   doJump(l2);
-  sprintf(tmp, "jmp %s", l2);
-  EmitLn(tmp);
   if(TOKEN != SEMI_COLON) expected("semicolon");
   next();
   EmitLabel(l1);
   if(TOKEN == NAME) DoAssignment();
-  doOneByteOp(48);
   doJump(l0);
-  sprintf(tmp, "jmp %s", l0);
-  EmitLn(tmp);
   if(TOKEN != RIGHT_PAREN) expected("closing paretheses");
   next();
   EmitLabel(l2);
   CodeBlock();
-  doOneByteOp(48);
   doJump(l1);
-  sprintf(tmp, "jmp %s", l1);
-  EmitLn(tmp);
   EmitLabel(l3);
 }
 
@@ -900,6 +1150,7 @@ void Statement() {
   }
   else if(TOKEN == PRINT) {
     DoPrint();
+    printLn();
   }
   else if(TOKEN == READ) {
     DoRead();
@@ -923,6 +1174,41 @@ void CodeLine() {
   }
 }
 
+void printLn() {
+/*
+ * mov byte [dword 0x8049000],0xa
+ * mov al,0x4
+ * xor ebx,ebx
+ * inc ebx
+ * mov ecx,0x8049000
+ * xor edx,edx
+ * inc edx
+ * int 0x80
+ */
+  writeByte(0xc6);
+  writeByte(0x05);
+  writeByte(0x00);
+  writeByte(0x90);
+  writeByte(0x04);
+  writeByte(0x08);
+  writeByte(0x0a);
+  writeByte(0xb0);
+  writeByte(0x04);
+  writeByte(0x31);
+  writeByte(0xdb);
+  writeByte(0x43);
+  writeByte(0xb9);
+  writeByte(0x00);
+  writeByte(0x90);
+  writeByte(0x04);
+  writeByte(0x08);
+  writeByte(0x31);
+  writeByte(0xd2);
+  writeByte(0x42);
+  writeByte(0xcd);
+  writeByte(0x80);
+}
+
 void CodeBlock() {
   if(TOKEN != LEFT_BRACE) expected("{");
   next();
@@ -942,11 +1228,8 @@ int main(int argc, char *argv[]) {
 #ifdef _WIN32
   _setmode( _fileno(stdout), _O_BINARY);
 #endif
-  if(argc == 2)
-    if(!strcmp(argv[1],"asm"))
-      type_out = ASM;
-    else
-      type_out = BINARY;
+  if( argc == 2 && !strcmp(argv[1],"asm"))
+    type_out = ASM;
   else
     type_out = BINARY;
   init();

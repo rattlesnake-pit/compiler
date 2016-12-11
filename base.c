@@ -3,6 +3,7 @@
 #include "string.h"
 #include "strings.h"
 #include "stdlib.h"
+#include "code_gen.h"
 
 char* str_tokens[] = {
   "char",
@@ -197,6 +198,7 @@ void nextString() {
 }
 
 void init() {
+  initBuffer();
   getChar();
 }
 
