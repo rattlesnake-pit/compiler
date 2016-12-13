@@ -4,7 +4,7 @@
 #include "compiler.h"
 #include "stdlib.h"
 
-int PC = 162; // this address is where we start writing to memory
+int PC = 205; // this address is where we start writing to memory
 int DS = 13;
 int ST_END = 0;
 int LabelNumber = 0;
@@ -44,7 +44,7 @@ void initBuffer() {
   outBuffer[21] = 0x00;
   outBuffer[22] = 0x00;
   outBuffer[23] = 0x00;
-  outBuffer[24] = 0xa2; // _start address
+  outBuffer[24] = 0xcd; // _start address
   outBuffer[25] = 0x80;
   outBuffer[26] = 0x04;
   outBuffer[27] = 0x08;
@@ -183,6 +183,50 @@ void initBuffer() {
   outBuffer[159] = 0x04;
   outBuffer[160] = 0x08;
   outBuffer[161] = 0xc3;
+  // read and convert to int
+  outBuffer[162] = 0xb0;
+  outBuffer[163] = 0x03;
+  outBuffer[164] = 0x31;
+  outBuffer[165] = 0xdb;
+  outBuffer[166] = 0xb9;
+  outBuffer[167] = 0x00; // buffer address
+  outBuffer[168] = 0x90;
+  outBuffer[169] = 0x04;
+  outBuffer[170] = 0x08;
+  outBuffer[171] = 0xba;
+  outBuffer[172] = 0x08;// number of bytes to read
+  outBuffer[173] = 0x00;
+  outBuffer[174] = 0x00;
+  outBuffer[175] = 0x00;
+  outBuffer[176] = 0xcd;
+  outBuffer[177] = 0x80;
+  outBuffer[178] = 0x48;
+  outBuffer[179] = 0x31;
+  outBuffer[180] = 0xdb;
+  outBuffer[181] = 0x31;
+  outBuffer[182] = 0xc9;
+  outBuffer[183] = 0x39;
+  outBuffer[184] = 0xc1;
+  outBuffer[185] = 0x74;
+  outBuffer[186] = 0x11;
+  outBuffer[187] = 0x6b;
+  outBuffer[188] = 0xdb;
+  outBuffer[189] = 0x0a;
+  outBuffer[190] = 0x8a;
+  outBuffer[191] = 0x91;
+  outBuffer[192] = 0x00; // address
+  outBuffer[193] = 0x90;
+  outBuffer[194] = 0x04;
+  outBuffer[195] = 0x08;
+  outBuffer[196] = 0x83;
+  outBuffer[197] = 0xea;
+  outBuffer[198] = 0x30;
+  outBuffer[199] = 0x01;
+  outBuffer[200] = 0xd3;
+  outBuffer[201] = 0x41;
+  outBuffer[202] = 0xeb;
+  outBuffer[203] = 0xeb;
+  outBuffer[204] = 0xc3;
 
 }
 void writeByte(unsigned char b) {

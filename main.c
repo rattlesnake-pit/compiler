@@ -977,10 +977,22 @@ void ReadVar(char type, char *name) {
     doVarOp(38,name);
     sprintf(tmp, "rdc %s", name);
     break;
-  case INT:
-    doVarOp(39,name);
-    sprintf(tmp, "rdi %s", name);
+  case INT:{
+             // call
+    writeByte(0xbb);
+    writeByte(0xa2);
+    writeByte(0x80);
+    writeByte(0x04);
+    writeByte(0x08);
+    writeByte(0xff);
+    writeByte(0xd3);
+    // mov [addres], ebx
+    
+    writeByte(0x89);
+    writeByte(0x1d);
+    writeInt(0x8049000 + findVariableAddress(name));
     break;
+   }
   case FLOAT:
     doVarOp(40,name);
     sprintf(tmp, "rdf %s", name);
@@ -990,8 +1002,26 @@ void ReadVar(char type, char *name) {
     sprintf(tmp, "rdd %s", name);
     break;
   case STRING:
-    doVarOp(42,name);
-    sprintf(tmp, "rds %s", name);
+    {
+      /*
+       *   mov    $0x3,%al
+       *   xor    %ebx,%ebx
+       *   mov    $address,%ecx
+       *   mov    $size,%edx
+       *   int    $0x80
+       */
+      writeByte(0xb0);
+      writeByte(0x03);
+      writeByte(0x31);
+      writeByte(0xdb);
+      writeByte(0xb9);
+      writeInt(0x8049000 + findVariableAddress(name));
+      writeByte(0xb2);
+      writeByte(findVariable(name)->stringSize);
+      writeByte(0xcd);
+      writeByte(0x80);
+      break;
+    }
   }
   EmitLn(tmp);
 }
@@ -1002,10 +1032,26 @@ void ReadArray(char type, char *name) {
     doVarOp(43,name);
     sprintf(tmp, "rdac %s", name);
     break;
-  case INT:
-    doVarOp(44,name);
-    sprintf(tmp, "rdai %s", name);
-    break;
+  case INT:{
+             // call
+    writeByte(0xbb);
+    writeByte(0xa2);
+    writeByte(0x80);
+    writeByte(0x04);
+    writeByte(0x08);
+    writeByte(0xff);
+    writeByte(0xd3);
+    //pop ecx
+    writeByte(0x59);
+    // imul ecx, 4
+    writeByte(0x6b);
+    writeByte(0xc9);
+    writeByte(0x04);
+    // mov [addres + ecx], ebx
+    writeByte(0x89);
+    writeByte(0x99);
+    writeInt(0x8049000 + findVariableAddress(name));
+    break;}
   case FLOAT:
     doVarOp(45,name);
     sprintf(tmp, "rdaf %s", name);
@@ -1014,9 +1060,40 @@ void ReadArray(char type, char *name) {
     doVarOp(46,name);
     sprintf(tmp, "rdad %s", name);
     break;
-  case STRING:
-    doVarOp(47,name);
-    sprintf(tmp, "rdas %s", name);
+  case STRING: {
+    //pop ecx
+    writeByte(0x59);
+    // imul ecx, stringsize
+    writeByte(0x6b);
+    writeByte(0xc9);
+    writeByte(findVariable(name)->stringSize);
+    // add ecx, 0x8049000
+    writeByte(0x81);
+    writeByte(0xc1);
+    writeByte(0x00);
+    writeByte(0x90);
+    writeByte(0x04);
+    writeByte(0x08);
+    // add ecx, start
+    writeByte(0x83);
+    writeByte(0xc1);
+    writeByte(findVariableAddress(name));
+    // mov al, 3
+    writeByte(0xb0);
+    writeByte(0x03);
+    // xor ebx, ebx
+    writeByte(0x31);
+    writeByte(0xdb);
+    // mov dx, size
+    writeByte(0x66);
+    writeByte(0xba);
+    writeByte(findVariable(name)->stringSize);
+    writeByte((findVariable(name)->stringSize) >> 8);
+
+    writeByte(0xcd);
+    writeByte(0x80);
+    break;
+   }
   }
   EmitLn(tmp);
 }
@@ -1030,15 +1107,10 @@ void Read(char* Name) {
     isArray = 1;
     next();
     Expression();
-    if(variable->type == STRING) {
-      pushkiDirect(variable->stringSize);
-      sprintf(tmp,"pushki %d",variable->stringSize);
-      EmitLn(tmp);
-      doOneByteOp(61);
-      EmitLn("MUL");
-    }
-    doOneByteOp(32);
-    EmitLn("popx");
+   // push eax
+    writeByte(0x50);
+    //if(variable->type == STRING) {
+    //}
     if(TOKEN != RIGHT_BRACKET) expected("closing array");
     next();
   }
